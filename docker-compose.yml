@@ -1,0 +1,36 @@
+services:
+  vitality-track-database:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+
+  web:
+    container_name: web_vitality_track
+    build: .
+    working_dir: /app
+    depends_on:
+      - vitality-track-database
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONBUFFERED=0
+      - DJANGO_SETTINGS_MODULE=settings.base
+      - DJANGO_LOG_LEVEL=INFO
+      - OAUTHLIB_INSECURE_TRANSPORT=False
+      - DEBUG=True
+    command: python manage.py runserver vitalitytrack.localhost:8000
+    volumes:
+      - ./project:/app
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:

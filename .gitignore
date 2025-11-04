@@ -1,3 +1,19 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+*.pot
+*.pyc
+*.pyo
+*.pyd
+
+venv/
+env/
+.venv/
+.env/
+
+*.env
 # Node
 node_modules/
 npm-debug.log*
@@ -31,6 +47,33 @@ ios/DerivedData/
 # Environment & Secrets
 .env
 .env.*
+!.env.example
+
+db.sqlite3
+db.sqlite3-journal
+
+/staticfiles/
+static/
+media/
+mediafiles/
+
+**/docker-compose.override.yml
+**/docker-compose.local.yml
+**/docker-compose.dev.yml
+
+*.pid
+*.seed
+*.pid.lock
+.docker/
+docker-compose.yml.override
+docker-compose.override.yml
+docker-compose*.backup.yml
+Dockerfile.*
+
+**/.dockerignore
+**/.docker-cache/
+**/.docker-volumes/
+**/.docker-build/
 *.key
 *.keystore
 *.pem
@@ -41,17 +84,30 @@ GoogleService-Info.plist
 
 # IDEs & OS
 .vscode/
+.history/
 .idea/
 *.swp
 *.swo
 .DS_Store
+
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
 # Testing
 coverage/
 jest-cache/
 jest-coverage/
 .nyc_output/
+.coverage
+.tox/
+.nox/
+.coverage.*
+htmlcov/
+.pytest_cache/
+test-results/
+junit/
+reports/
 
 # Metro & Watchman
 .metro/
@@ -66,4 +122,5 @@ tmp/
 temp/
 *.tmp
 *.bak
+*.old
 *.orig
