@@ -1,8 +1,8 @@
-# FitFlow - Sistema de Gestão de Treinamento Físico
+# VitalityTrack - Sistema de Gestão de Treinamento Físico
 
 ## 📱 Sobre o Projeto
 
-FitFlow é um aplicativo móvel desenvolvido em React Native com Expo para gestão inteligente de treinamento físico. O sistema integra a **Escala Subjetiva de Recuperação (ESR)** com **Zonas de Treinamento** calculadas pela **Metodologia de Karvonen**, permitindo que treinadores e atletas monitorem e otimizem o desempenho físico de forma personalizada.
+VitalityTrack é um aplicativo móvel desenvolvido em React Native com Expo para gestão inteligente de treinamento físico. O sistema integra a **Escala Subjetiva de Recuperação (ESR)** com **Zonas de Treinamento** calculadas pela **Metodologia de Karvonen**, permitindo que treinadores e atletas monitorem e otimizem o desempenho físico de forma personalizada.
 
 ### 🎯 Objetivos
 
