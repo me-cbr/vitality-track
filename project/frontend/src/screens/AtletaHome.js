@@ -1,21 +1,68 @@
 "use client"
 
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "react-native"
-import { useEffect, useRef } from "react"
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Animated,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native"
+import { useEffect, useRef, useState } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
+import { esrService } from "../services/esrService"
+import { trainingService } from "../services/trainingService"
+import { athleteService } from "../services/athleteService"
+import { useAuth } from "../contexts/AuthContext"
 
 export default function AtletaHome({ navigation }) {
-  const lastESR = 6
-  const weeklyProgress = 0.8
+  const { user } = useAuth()
+  const [lastESR, setLastESR] = useState(null)
+  const [weeklyProgress, setWeeklyProgress] = useState(null)
+  const [upcomingSessions, setUpcomingSessions] = useState([])
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    loadData()
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start()
   }, [])
+
+  const loadData = async () => {
+    if (!user?.id) return
+
+    try {
+      setLoading(true)
+      const [esrData, sessionsData, statsData] = await Promise.all([
+        esrService.getLatestESR(user.id).catch(() => null),
+        trainingService.getSessions(user.id).catch(() => []),
+        athleteService.getAthleteStats(user.id).catch(() => null),
+      ])
+
+      setLastESR(esrData)
+      setUpcomingSessions(sessionsData.filter((s) => !s.completed).slice(0, 2))
+      setStats(statsData)
+      setWeeklyProgress(statsData?.weeklyProgress || null)
+    } catch (error) {
+      console.error(" Error loading athlete data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadData()
+    setRefreshing(false)
+  }
 
   const getESRColor = (value) => {
     if (value <= 3) return colors.danger
@@ -29,129 +76,145 @@ export default function AtletaHome({ navigation }) {
     return "Ótimo"
   }
 
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando dados...</Text>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Bem-vindo, Rafael</Text>
+          <Text style={styles.greeting}>Bem-vindo, {user?.name || "Atleta"}</Text>
           <Text style={styles.subGreeting}>Vamos treinar hoje?</Text>
         </View>
 
-        {/* Weekly Progress Card */}
-        <Animated.View style={[styles.progressCard, shadows.md, { opacity: fadeAnim }]}>
-          <View style={styles.progressHeader}>
-            <View>
-              <Text style={styles.progressTitle}>Progresso Semanal</Text>
-              <Text style={styles.progressSubtitle}>4 de 5 sessões completas</Text>
-            </View>
-            <View style={styles.progressBadge}>
-              <Text style={styles.progressBadgeText}>80%</Text>
-            </View>
-          </View>
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${weeklyProgress * 100}%` }]} />
-          </View>
-          <Text style={styles.progressLabel}>Sessão de hoje: Treino Intervalado - 18h00</Text>
-        </Animated.View>
-
-        {/* ESR Card - Featured */}
-        <Animated.View style={[styles.esrCard, { backgroundColor: getESRColor(lastESR) }, { opacity: fadeAnim }]}>
-          <View style={styles.esrContent}>
-            <View style={styles.esrHeader}>
+        {weeklyProgress && (
+          <Animated.View style={[styles.progressCard, shadows.md, { opacity: fadeAnim }]}>
+            <View style={styles.progressHeader}>
               <View>
-                <View style={styles.esrTitleRow}>
-                  <Text style={styles.esrEmoji}>❤️</Text>
-                  <View>
-                    <Text style={styles.esrTitle}>Escala Subjetiva (ESR)</Text>
-                    <Text style={styles.esrSubtitle}>Avaliação 2h atrás</Text>
+                <Text style={styles.progressTitle}>Progresso Semanal</Text>
+                <Text style={styles.progressSubtitle}>
+                  {weeklyProgress.completed} de {weeklyProgress.total} sessões completas
+                </Text>
+              </View>
+              <View style={styles.progressBadge}>
+                <Text style={styles.progressBadgeText}>{Math.round(weeklyProgress.percentage)}%</Text>
+              </View>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${weeklyProgress.percentage}%` }]} />
+            </View>
+            {weeklyProgress.nextSession && (
+              <Text style={styles.progressLabel}>Próxima sessão: {weeklyProgress.nextSession}</Text>
+            )}
+          </Animated.View>
+        )}
+
+        {lastESR && (
+          <Animated.View
+            style={[styles.esrCard, { backgroundColor: getESRColor(lastESR.value) }, { opacity: fadeAnim }]}
+          >
+            <View style={styles.esrContent}>
+              <View style={styles.esrHeader}>
+                <View>
+                  <View style={styles.esrTitleRow}>
+                    <Text style={styles.esrEmoji}>❤️</Text>
+                    <View>
+                      <Text style={styles.esrTitle}>Escala Subjetiva (ESR)</Text>
+                      <Text style={styles.esrSubtitle}>Última avaliação</Text>
+                    </View>
                   </View>
                 </View>
+                <View style={styles.esrValueContainer}>
+                  <Text style={styles.esrValue}>{lastESR.value}</Text>
+                  <Text style={styles.esrLabel}>{getESRLabel(lastESR.value)}</Text>
+                </View>
               </View>
-              <View style={styles.esrValueContainer}>
-                <Text style={styles.esrValue}>{lastESR}</Text>
-                <Text style={styles.esrLabel}>{getESRLabel(lastESR)}</Text>
-              </View>
+              <TouchableOpacity
+                style={styles.esrButton}
+                onPress={() => navigation.navigate("ESRModal")}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.esrButtonText}>REGISTRAR NOVO ESR</Text>
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              style={styles.esrButton}
-              onPress={() => navigation.navigate("ESRModal")}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.esrButtonText}>REGISTRAR NOVO ESR</Text>
-            </TouchableOpacity>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        )}
 
-        {/* Stats Grid */}
-        <Animated.View style={[styles.statsGrid, { opacity: fadeAnim }]}>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={styles.statEmoji}>💪</Text>
+        {stats && (
+          <Animated.View style={[styles.statsGrid, { opacity: fadeAnim }]}>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.primary + "15" }]}>
+                <Text style={styles.statEmoji}>💪</Text>
+              </View>
+              <Text style={styles.statValue}>
+                {stats.weeklySessionsCompleted}/{stats.weeklySessionsTotal}
+              </Text>
+              <Text style={styles.statLabel}>Sessões Semana</Text>
             </View>
-            <Text style={styles.statValue}>4/5</Text>
-            <Text style={styles.statLabel}>Sessões Semana</Text>
-          </View>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.success + "15" }]}>
-              <Text style={styles.statEmoji}>🔥</Text>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.success + "15" }]}>
+                <Text style={styles.statEmoji}>🔥</Text>
+              </View>
+              <Text style={styles.statValue}>{stats.totalLoad || 0}</Text>
+              <Text style={styles.statLabel}>Carga Total (TSS)</Text>
             </View>
-            <Text style={styles.statValue}>342</Text>
-            <Text style={styles.statLabel}>Carga Total (TSS)</Text>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        )}
 
-        {/* Upcoming Sessions Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Próximas Sessões</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Sessions")}>
-              <Text style={styles.sectionLink}>Ver todas</Text>
-            </TouchableOpacity>
+        {upcomingSessions.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Próximas Sessões</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Sessions")}>
+                <Text style={styles.sectionLink}>Ver todas</Text>
+              </TouchableOpacity>
+            </View>
+
+            {upcomingSessions.map((session) => (
+              <TouchableOpacity
+                key={session.id}
+                style={[styles.sessionCard, shadows.sm]}
+                onPress={() => navigation.navigate("SessionDetail", { sessionId: session.id })}
+                activeOpacity={0.85}
+              >
+                <View style={styles.sessionLeft}>
+                  <View style={styles.sessionTime}>
+                    <Text style={styles.sessionTimeText}>{session.dayLabel || "Hoje"}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.sessionTitle}>{session.title}</Text>
+                    <Text style={styles.sessionTime2}>{session.timeLabel}</Text>
+                  </View>
+                </View>
+                <View
+                  style={[styles.zoneIndicator, { backgroundColor: colors[`zone${session.zone}`] || colors.primary }]}
+                >
+                  <Text style={styles.zoneText}>Z{session.zone}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </View>
+        )}
 
-          <TouchableOpacity
-            style={[styles.sessionCard, shadows.sm]}
-            onPress={() => navigation.navigate("SessionDetail", { sessionId: "1" })}
-            activeOpacity={0.85}
-          >
-            <View style={styles.sessionLeft}>
-              <View style={styles.sessionTime}>
-                <Text style={styles.sessionTimeText}>Hoje</Text>
-              </View>
-              <View>
-                <Text style={styles.sessionTitle}>Treino Intervalado Z4</Text>
-                <Text style={styles.sessionTime2}>18h00 - 45 min</Text>
-              </View>
-            </View>
-            <View style={[styles.zoneIndicator, { backgroundColor: colors.zone4 }]}>
-              <Text style={styles.zoneText}>Z4</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.sessionCard, shadows.sm]}
-            onPress={() => navigation.navigate("SessionDetail", { sessionId: "2" })}
-            activeOpacity={0.85}
-          >
-            <View style={styles.sessionLeft}>
-              <View style={styles.sessionTime}>
-                <Text style={styles.sessionTimeText}>Amanhã</Text>
-              </View>
-              <View>
-                <Text style={styles.sessionTitle}>Recuperação Z1-Z2</Text>
-                <Text style={styles.sessionTime2}>19h00 - 60 min</Text>
-              </View>
-            </View>
-            <View style={[styles.zoneIndicator, { backgroundColor: colors.zone1 }]}>
-              <Text style={styles.zoneText}>Z1</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        {!weeklyProgress && !lastESR && !stats && upcomingSessions.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>📊</Text>
+            <Text style={styles.emptyText}>Nenhum dado disponível</Text>
+            <Text style={styles.emptySubtext}>Seus dados de treino aparecerão aqui</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   )
@@ -161,6 +224,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutralBg,
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   scrollView: {
     flex: 1,
@@ -410,5 +482,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     color: colors.white,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxl * 2,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: spacing.md,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 })

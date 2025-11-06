@@ -1,46 +1,48 @@
 export const colors = {
-  // Primary brand colors - teal/green for vitality
-  primary: "#06A77D",
-  primaryLight: "#2EC9A6",
-  primaryDark: "#04825F",
+  // Primary brand colors - soft pastel teal
+  primary: "#7DD3C0",
+  primaryLight: "#A8E6D7",
+  primaryDark: "#5BB5A2",
 
-  // Secondary accent - professional teal
-  secondary: "#0A8B6F",
-  secondaryLight: "#1BA389",
+  // Secondary accent - soft lavender
+  secondary: "#B8A4D9",
+  secondaryLight: "#D4C5F0",
 
-  // Action colors - vibrant for CTAs
-  action: "#00D4FF",
-  actionLight: "#4FE3FF",
-  actionDark: "#0099BB",
+  // Action colors - soft coral
+  action: "#FFB4A2",
+  actionLight: "#FFD4C7",
+  actionDark: "#FF9B85",
 
-  // Status colors
-  success: "#00C853",
-  successLight: "#69F0AE",
-  warning: "#FFB300",
-  warningLight: "#FFD54F",
-  danger: "#D32F2F",
-  dangerLight: "#EF5350",
+  // Status colors - pastel versions
+  success: "#A8E6CF",
+  successLight: "#C8F2E0",
+  warning: "#FFE5A0",
+  warningLight: "#FFF2CC",
+  danger: "#FFB4B4",
+  dangerLight: "#FFD4D4",
 
-  // Neutral palette - clean and professional
-  neutralBg: "#F5F7FA",
-  divider: "#E0E6EB",
-  border: "#D9E0E8",
+  // Neutral palette - soft and clean
+  background: "#F8F9FC",
+  surface: "#FFFFFF",
+  neutralBg: "#F0F4F8",
+  divider: "#E8EDF2",
+  border: "#DFE6ED",
 
-  // Text colors - high contrast
-  text: "#1A1F2E",
-  textSecondary: "#6B7280",
-  textTertiary: "#9CA3AF",
+  // Text colors - good contrast on pastel backgrounds
+  text: "#2D3748",
+  textSecondary: "#718096",
+  textTertiary: "#A0AEC0",
 
   // White and black
   white: "#FFFFFF",
-  black: "#000000",
+  black: "#1A202C",
 
-  // Heart rate zones - vivid gradient
-  zone1: "#00C853", // Recovery
-  zone2: "#76FF03", // Endurance
-  zone3: "#FFD600", // Tempo
-  zone4: "#FF9100", // Threshold
-  zone5: "#D32F2F", // Max
+  // Heart rate zones - soft gradient
+  zone1: "#A8E6CF", // Recovery
+  zone2: "#C8F2A8", // Endurance
+  zone3: "#FFE5A0", // Tempo
+  zone4: "#FFB4A2", // Threshold
+  zone5: "#FFB4B4", // Max
 }
 
 export const spacing = {

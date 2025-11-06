@@ -1,8 +1,13 @@
+"use client"
+
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
-import { colors } from "../theme/colors"
-import { UserIcon, SettingsIcon, LogOutIcon, HeartIcon } from "../components/Icons"
+import { colors, spacing, borderRadius } from "../theme/colors"
+import { UserIcon, SettingsIcon, HeartIcon } from "../components/Icons"
+import { useAuth } from "../contexts/AuthContext"
 
 export default function ProfileAtleta({ navigation }) {
+  const { user } = useAuth()
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -14,57 +19,66 @@ export default function ProfileAtleta({ navigation }) {
           <View style={styles.avatar}>
             <UserIcon color={colors.primary} size={48} />
           </View>
-          <Text style={styles.name}>João Silva</Text>
-          <Text style={styles.email}>joao.silva@email.com</Text>
+          <Text style={styles.name}>{user?.name || "Usuário"}</Text>
+          <Text style={styles.email}>{user?.email}</Text>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Dados Físicos</Text>
-          <View style={styles.dataGrid}>
-            <View style={styles.dataItem}>
-              <Text style={styles.dataLabel}>Peso</Text>
-              <Text style={styles.dataValue}>75 kg</Text>
+        {user?.type === "athlete" && (
+          <>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Dados Físicos</Text>
+              <View style={styles.dataGrid}>
+                <View style={styles.dataItem}>
+                  <Text style={styles.dataLabel}>Peso</Text>
+                  <Text style={styles.dataValue}>{user?.weight || 75} kg</Text>
+                </View>
+                <View style={styles.dataItem}>
+                  <Text style={styles.dataLabel}>Altura</Text>
+                  <Text style={styles.dataValue}>{user?.height || 1.78} m</Text>
+                </View>
+                <View style={styles.dataItem}>
+                  <Text style={styles.dataLabel}>Idade</Text>
+                  <Text style={styles.dataValue}>{user?.age || 28} anos</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.dataItem}>
-              <Text style={styles.dataLabel}>Altura</Text>
-              <Text style={styles.dataValue}>1.78 m</Text>
-            </View>
-            <View style={styles.dataItem}>
-              <Text style={styles.dataLabel}>Idade</Text>
-              <Text style={styles.dataValue}>28 anos</Text>
-            </View>
-          </View>
-        </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Frequência Cardíaca</Text>
-          <View style={styles.hrData}>
-            <View style={styles.hrItem}>
-              <HeartIcon color={colors.primary} size={20} />
-              <View style={styles.hrInfo}>
-                <Text style={styles.hrLabel}>FC Repouso</Text>
-                <Text style={styles.hrValue}>60 bpm</Text>
+            <View style={styles.card}>
+              <Text style={styles.cardTitle}>Frequência Cardíaca</Text>
+              <View style={styles.hrData}>
+                <View style={styles.hrItem}>
+                  <HeartIcon color={colors.primary} size={20} />
+                  <View style={styles.hrInfo}>
+                    <Text style={styles.hrLabel}>FC Repouso</Text>
+                    <Text style={styles.hrValue}>60 bpm</Text>
+                  </View>
+                </View>
+                <View style={styles.hrItem}>
+                  <HeartIcon color={colors.danger} size={20} />
+                  <View style={styles.hrInfo}>
+                    <Text style={styles.hrLabel}>FC Máxima</Text>
+                    <Text style={styles.hrValue}>192 bpm</Text>
+                  </View>
+                </View>
               </View>
             </View>
-            <View style={styles.hrItem}>
-              <HeartIcon color={colors.danger} size={20} />
-              <View style={styles.hrInfo}>
-                <Text style={styles.hrLabel}>FC Máxima</Text>
-                <Text style={styles.hrValue}>192 bpm</Text>
-              </View>
+          </>
+        )}
+
+        {user?.type === "coach" && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Informações Profissionais</Text>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>CREF</Text>
+              <Text style={styles.infoValue}>{user?.cref || "123456"}</Text>
             </View>
           </View>
-        </View>
+        )}
 
         <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate("Settings")}>
             <SettingsIcon color={colors.text} size={20} />
             <Text style={styles.menuText}>Configurações</Text>
-          </TouchableOpacity>
-          <View style={styles.menuDivider} />
-          <TouchableOpacity style={styles.menuItem}>
-            <LogOutIcon color={colors.danger} size={20} />
-            <Text style={[styles.menuText, { color: colors.danger }]}>Sair</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -78,7 +92,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    padding: 24,
+    padding: spacing.lg,
     paddingTop: 60,
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
@@ -91,14 +105,14 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    padding: spacing.md,
   },
   profileCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 24,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -109,7 +123,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primaryLight,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   name: {
     fontSize: 24,
@@ -123,9 +137,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -133,18 +147,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: colors.text,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   dataGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 12,
+    gap: spacing.sm,
   },
   dataItem: {
     flex: 1,
     backgroundColor: colors.primaryLight,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     alignItems: "center",
   },
   dataLabel: {
@@ -158,15 +172,15 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   hrData: {
-    gap: 12,
+    gap: spacing.sm,
   },
   hrItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    padding: 12,
+    gap: spacing.sm,
+    padding: spacing.sm,
     backgroundColor: colors.primaryLight,
-    borderRadius: 12,
+    borderRadius: borderRadius.md,
   },
   hrInfo: {
     flex: 1,
@@ -181,27 +195,37 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.text,
   },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingVertical: spacing.sm,
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  infoValue: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+  },
   menuCard: {
     backgroundColor: colors.surface,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     overflow: "hidden",
-    marginBottom: 32,
+    marginBottom: spacing.xxl,
     borderWidth: 1,
     borderColor: colors.border,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
-    gap: 12,
+    padding: spacing.md,
+    gap: spacing.sm,
   },
   menuText: {
     fontSize: 16,
     color: colors.text,
     fontWeight: "500",
-  },
-  menuDivider: {
-    height: 1,
-    backgroundColor: colors.border,
   },
 })

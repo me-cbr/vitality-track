@@ -1,19 +1,18 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform } from "react-native"
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
 import LoadingButton from "../components/LoadingButton"
 import Toast from "../components/Toast"
+import { useAuth } from "../contexts/AuthContext"
 
-export default function AuthLogin({ navigation, route, onLogin }) {
+export default function AuthLogin({ navigation }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [rememberMe, setRememberMe] = useState(false)
-  const [isLogin, setIsLogin] = useState(true)
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
-  const role = route?.params?.role || "athlete"
+  const { login } = useAuth()
 
   const handleSubmit = async () => {
     if (!email || !password) {
@@ -23,19 +22,19 @@ export default function AuthLogin({ navigation, route, onLogin }) {
 
     setLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
+    // Simulate API delay
+    setTimeout(async () => {
+      const result = await login(email, password)
       setLoading(false)
 
-      // Mock validation
-      if (email === "error@test.com") {
-        setToast({ visible: true, message: "Credenciais inválidas", type: "error" })
-        return
+      if (result.success) {
+        // Navigate based on user type
+        const destination = result.user.type === "athlete" ? "AthleteMain" : "CoachMain"
+        navigation.replace(destination)
+      } else {
+        setToast({ visible: true, message: result.error, type: "error" })
       }
-
-      if (onLogin) onLogin(role)
-      navigation.navigate(role === "athlete" ? "AthleteMain" : "CoachMain")
-    }, 1500)
+    }, 1000)
   }
 
   return (
@@ -48,48 +47,47 @@ export default function AuthLogin({ navigation, route, onLogin }) {
       />
 
       <View style={styles.content}>
-        <Text style={styles.title}>{isLogin ? "Entrar" : "Criar Conta"}</Text>
-        <Text style={styles.subtitle}>{role === "athlete" ? "Atleta" : "Treinador"}</Text>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logo}>💪</Text>
+          <Text style={styles.appName}>VitalityTrack</Text>
+        </View>
+
+        <Text style={styles.title}>Bem-vindo</Text>
+        <Text style={styles.subtitle}>Entre com suas credenciais</Text>
 
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-            placeholderTextColor={colors.textSecondary}
-          />
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="seu@email.com"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholderTextColor={colors.textTertiary}
+            />
+          </View>
 
-          <TextInput
-            style={styles.input}
-            placeholder="Senha"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor={colors.textSecondary}
-          />
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Senha</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              placeholderTextColor={colors.textTertiary}
+            />
+          </View>
 
-          {isLogin && (
-            <TouchableOpacity style={styles.checkboxContainer} onPress={() => setRememberMe(!rememberMe)}>
-              <View style={[styles.checkbox, rememberMe && styles.checkboxChecked]}>
-                {rememberMe && <Text style={styles.checkmark}>✓</Text>}
-              </View>
-              <Text style={styles.checkboxLabel}>Lembrar de mim</Text>
-            </TouchableOpacity>
-          )}
+          <View style={styles.helpContainer}>
+            <Text style={styles.helpText}>Credenciais de teste:</Text>
+            <Text style={styles.helpDetail}>Atleta: atleta@email.com / atleta</Text>
+            <Text style={styles.helpDetail}>Treinador: treinador@email.com / treinador</Text>
+          </View>
 
-          <LoadingButton
-            title={isLogin ? "Entrar" : "Criar Conta"}
-            onPress={handleSubmit}
-            loading={loading}
-            style={{ marginTop: spacing.md }}
-          />
-
-          <TouchableOpacity onPress={() => setIsLogin(!isLogin)}>
-            <Text style={styles.linkText}>{isLogin ? "Criar nova conta" : "Já tenho conta"}</Text>
-          </TouchableOpacity>
+          <LoadingButton title="Entrar" onPress={handleSubmit} loading={loading} style={{ marginTop: spacing.lg }} />
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -99,18 +97,32 @@ export default function AuthLogin({ navigation, route, onLogin }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.white,
+    backgroundColor: colors.background,
   },
   content: {
     flex: 1,
     justifyContent: "center",
     paddingHorizontal: spacing.xl,
   },
+  logoContainer: {
+    alignItems: "center",
+    marginBottom: spacing.xxl,
+  },
+  logo: {
+    fontSize: 64,
+    marginBottom: spacing.sm,
+  },
+  appName: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: colors.primary,
+    letterSpacing: -0.5,
+  },
   title: {
     fontSize: 32,
     fontWeight: "800",
     color: colors.text,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     letterSpacing: -0.5,
   },
   subtitle: {
@@ -122,50 +134,40 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.md,
   },
+  inputContainer: {
+    gap: spacing.xs,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.text,
+    marginLeft: spacing.xs,
+  },
   input: {
     height: 56,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.border,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
     fontSize: 16,
     color: colors.text,
-    backgroundColor: colors.white,
+    backgroundColor: colors.surface,
   },
-  checkboxContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.sm,
-    marginVertical: spacing.sm,
+  helpContainer: {
+    backgroundColor: colors.primaryLight,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginTop: spacing.sm,
   },
-  checkbox: {
-    width: 20,
-    height: 20,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkboxChecked: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  checkmark: {
-    color: colors.white,
-    fontSize: 14,
-    fontWeight: "700",
-  },
-  checkboxLabel: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: "500",
-  },
-  linkText: {
-    fontSize: 14,
-    color: colors.primary,
-    textAlign: "center",
-    marginTop: spacing.lg,
+  helpText: {
+    fontSize: 12,
     fontWeight: "600",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  helpDetail: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontFamily: "monospace",
   },
 })

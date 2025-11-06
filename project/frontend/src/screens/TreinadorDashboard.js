@@ -1,19 +1,30 @@
 "use client"
 
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "react-native"
-import { useEffect, useRef } from "react"
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Animated,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native"
+import { useEffect, useRef, useState } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
+import { athleteService } from "../services/athleteService"
+import { useAuth } from "../contexts/AuthContext"
 
 export default function TreinadorDashboard({ navigation }) {
-  const athletes = [
-    { id: "1", name: "Rafael Silva", age: 26, hrRep: 58, esr: 6, status: "ativo" },
-    { id: "2", name: "Júlia Santos", age: 22, hrRep: 62, esr: 4, status: "alerta" },
-    { id: "3", name: "Carlos Mendes", age: 30, hrRep: 64, esr: 8, status: "ativo" },
-  ]
-
+  const { user } = useAuth()
+  const [athletes, setAthletes] = useState([])
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    loadData()
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
@@ -21,17 +32,56 @@ export default function TreinadorDashboard({ navigation }) {
     }).start()
   }, [])
 
+  const loadData = async () => {
+    try {
+      setLoading(true)
+      const athletesData = await athleteService.getAthletes()
+      setAthletes(athletesData)
+
+      // Calculate stats from athletes data
+      const totalAthletes = athletesData.length
+      const activeAthletes = athletesData.filter((a) => a.status === "ativo").length
+      const alertAthletes = athletesData.filter((a) => a.esr && a.esr <= 4).length
+      const avgAdherence = athletesData.reduce((acc, a) => acc + (a.adherence || 0), 0) / totalAthletes || 0
+
+      setStats({
+        totalAthletes,
+        activeAthletes,
+        alertAthletes,
+        adherence: Math.round(avgAdherence),
+      })
+    } catch (error) {
+      console.error(" Error loading coach data:", error)
+      // Set empty data on error
+      setAthletes([])
+      setStats(null)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadData()
+    setRefreshing(false)
+  }
+
   const getESRColor = (value) => {
     if (value <= 3) return colors.danger
     if (value <= 6) return colors.warning
     return colors.success
   }
 
-  const getESRStatus = (value) => {
-    if (value <= 3) return "Crítico"
-    if (value <= 6) return "Moderado"
-    return "Ótimo"
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando dados...</Text>
+      </View>
+    )
   }
+
+  const alertAthlete = athletes.find((a) => a.esr && a.esr <= 4)
 
   return (
     <View style={styles.container}>
@@ -39,6 +89,7 @@ export default function TreinadorDashboard({ navigation }) {
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {/* Header */}
         <View style={styles.header}>
@@ -46,87 +97,106 @@ export default function TreinadorDashboard({ navigation }) {
           <Text style={styles.subGreeting}>Gerencie seu time de atletas</Text>
         </View>
 
-        {/* Stats Grid */}
-        <Animated.View style={[styles.statsGrid, { opacity: fadeAnim }]}>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={styles.statEmoji}>👥</Text>
+        {stats && (
+          <Animated.View style={[styles.statsGrid, { opacity: fadeAnim }]}>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.primary + "15" }]}>
+                <Text style={styles.statEmoji}>👥</Text>
+              </View>
+              <Text style={styles.statValue}>{stats.totalAthletes}</Text>
+              <Text style={styles.statLabel}>Atletas</Text>
             </View>
-            <Text style={styles.statValue}>12</Text>
-            <Text style={styles.statLabel}>Atletas</Text>
-          </View>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.success + "15" }]}>
-              <Text style={styles.statEmoji}>📈</Text>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.success + "15" }]}>
+                <Text style={styles.statEmoji}>📈</Text>
+              </View>
+              <Text style={styles.statValue}>{stats.adherence}%</Text>
+              <Text style={styles.statLabel}>Adesão</Text>
             </View>
-            <Text style={styles.statValue}>89%</Text>
-            <Text style={styles.statLabel}>Adesão</Text>
-          </View>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.danger + "15" }]}>
-              <Text style={styles.statEmoji}>⚠️</Text>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.danger + "15" }]}>
+                <Text style={styles.statEmoji}>⚠️</Text>
+              </View>
+              <Text style={styles.statValue}>{stats.alertAthletes}</Text>
+              <Text style={styles.statLabel}>Alertas</Text>
             </View>
-            <Text style={styles.statValue}>3</Text>
-            <Text style={styles.statLabel}>Alertas</Text>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        )}
 
-        {/* Alert Card */}
-        <Animated.View style={[styles.alertCard, shadows.md, { opacity: fadeAnim }]}>
-          <View style={styles.alertLeft}>
-            <View style={styles.alertIconBg}>
-              <Text style={styles.alertIcon}>⚠️</Text>
+        {alertAthlete && (
+          <Animated.View style={[styles.alertCard, shadows.md, { opacity: fadeAnim }]}>
+            <View style={styles.alertLeft}>
+              <View style={styles.alertIconBg}>
+                <Text style={styles.alertIcon}>⚠️</Text>
+              </View>
+              <View style={styles.alertContent}>
+                <Text style={styles.alertTitle}>Atenção Necessária</Text>
+                <Text style={styles.alertMessage}>
+                  {alertAthlete.name} (ESR {alertAthlete.esr}) - considere ajustar carga
+                </Text>
+              </View>
             </View>
-            <View style={styles.alertContent}>
-              <Text style={styles.alertTitle}>Atenção Necessária</Text>
-              <Text style={styles.alertMessage}>Júlia (ESR baixo) - considere ajustar carga</Text>
-            </View>
-          </View>
-          <TouchableOpacity style={styles.alertAction}>
-            <Text style={styles.alertActionText}>→</Text>
-          </TouchableOpacity>
-        </Animated.View>
+            <TouchableOpacity
+              style={styles.alertAction}
+              onPress={() => navigation.navigate("AthleteDetail", { athleteId: alertAthlete.id })}
+            >
+              <Text style={styles.alertActionText}>→</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
 
         {/* Athletes List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Meus Atletas</Text>
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>3 ativos</Text>
-            </View>
+            {stats && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{stats.activeAthletes} ativos</Text>
+              </View>
+            )}
           </View>
 
-          {athletes.map((athlete) => (
-            <TouchableOpacity
-              key={athlete.id}
-              style={[styles.athleteCard, shadows.sm]}
-              onPress={() => navigation.navigate("AthleteDetail", { athleteId: athlete.id })}
-              activeOpacity={0.85}
-            >
-              <View style={styles.athleteHeader}>
-                <View style={styles.athleteAvatar}>
-                  <Text style={styles.athleteInitials}>
-                    {athlete.name
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </Text>
-                </View>
-                <View style={styles.athleteInfo}>
-                  <Text style={styles.athleteName}>{athlete.name}</Text>
-                  <View style={styles.athleteMetrics}>
-                    <Text style={styles.athleteMetric}>{athlete.age} anos</Text>
-                    <View style={styles.metricDot} />
-                    <Text style={styles.athleteMetric}>❤️ {athlete.hrRep} bpm</Text>
+          {athletes.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyEmoji}>👥</Text>
+              <Text style={styles.emptyText}>Nenhum atleta cadastrado</Text>
+              <Text style={styles.emptySubtext}>Adicione atletas para começar</Text>
+            </View>
+          ) : (
+            athletes.map((athlete) => (
+              <TouchableOpacity
+                key={athlete.id}
+                style={[styles.athleteCard, shadows.sm]}
+                onPress={() => navigation.navigate("AthleteDetail", { athleteId: athlete.id })}
+                activeOpacity={0.85}
+              >
+                <View style={styles.athleteHeader}>
+                  <View style={styles.athleteAvatar}>
+                    <Text style={styles.athleteInitials}>
+                      {athlete.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")}
+                    </Text>
+                  </View>
+                  <View style={styles.athleteInfo}>
+                    <Text style={styles.athleteName}>{athlete.name}</Text>
+                    <View style={styles.athleteMetrics}>
+                      <Text style={styles.athleteMetric}>{athlete.age} anos</Text>
+                      <View style={styles.metricDot} />
+                      <Text style={styles.athleteMetric}>❤️ {athlete.hrRep} bpm</Text>
+                    </View>
                   </View>
                 </View>
-              </View>
-              <View style={[styles.esrBadge, { backgroundColor: getESRColor(athlete.esr) }]}>
-                <Text style={styles.esrLabel}>ESR</Text>
-                <Text style={styles.esrValue}>{athlete.esr}</Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+                {athlete.esr && (
+                  <View style={[styles.esrBadge, { backgroundColor: getESRColor(athlete.esr) }]}>
+                    <Text style={styles.esrLabel}>ESR</Text>
+                    <Text style={styles.esrValue}>{athlete.esr}</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* Quick Actions */}
@@ -156,6 +226,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutralBg,
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   scrollView: {
     flex: 1,
@@ -390,6 +469,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
     color: colors.text,
+    textAlign: "center",
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxl * 2,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: spacing.md,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
     textAlign: "center",
   },
 })

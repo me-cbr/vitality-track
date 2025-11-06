@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { NavigationContainer } from "@react-navigation/native"
 import { createStackNavigator } from "@react-navigation/stack"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
@@ -8,6 +7,8 @@ import { StatusBar } from "expo-status-bar"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { colors } from "./src/theme/colors"
 
+import { AuthProvider } from "./src/contexts/AuthContext"
+import { FeedbackProvider } from "./src/contexts/FeedbackContext"
 
 import SplashWelcome from "./src/screens/SplashWelcome"
 import AuthLogin from "./src/screens/AuthLogin"
@@ -21,9 +22,10 @@ import ProfileAtleta from "./src/screens/ProfileAtleta"
 import AthleteDetailTreinador from "./src/screens/AthleteDetailTreinador"
 import PlanEditor from "./src/screens/PlanEditor"
 import AssessmentCreate from "./src/screens/AssessmentCreate"
-import MessagesInbox from "./src/screens/MessagesInbox"
+import Feedbacks from "./src/screens/Feedbacks"
+import Settings from "./src/screens/Settings"
 
-import { HomeIcon, ListIcon, ChartIcon, MessageIcon, UserIcon } from "./src/components/Icons"
+import { HomeIcon, ListIcon, ChartIcon, FeedbackIcon, UserIcon } from "./src/components/Icons"
 
 const Stack = createStackNavigator()
 const Tab = createBottomTabNavigator()
@@ -75,11 +77,11 @@ function AthleteTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Messages"
-        component={MessagesInbox}
+        name="Feedbacks"
+        component={Feedbacks}
         options={{
-          tabBarIcon: ({ color }) => <MessageIcon color={color} />,
-          tabBarLabel: "Mensagens",
+          tabBarIcon: ({ color }) => <FeedbackIcon color={color} />,
+          tabBarLabel: "Feedbacks",
         }}
       />
       <Tab.Screen
@@ -125,11 +127,11 @@ function CoachTabNavigator() {
         }}
       />
       <Tab.Screen
-        name="Messages"
-        component={MessagesInbox}
+        name="Feedbacks"
+        component={Feedbacks}
         options={{
-          tabBarIcon: ({ color }) => <MessageIcon color={color} />,
-          tabBarLabel: "Mensagens",
+          tabBarIcon: ({ color }) => <FeedbackIcon color={color} />,
+          tabBarLabel: "Feedbacks",
         }}
       />
       <Tab.Screen
@@ -145,31 +147,34 @@ function CoachTabNavigator() {
 }
 
 export default function App() {
-  const [userRole, setUserRole] = useState(null)
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <NavigationContainer>
-        <StatusBar style="dark" />
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="Splash" component={SplashWelcome} />
-          <Stack.Screen name="Auth">{(props) => <AuthLogin {...props} onLogin={setUserRole} />}</Stack.Screen>
-          <Stack.Screen name="AthleteMain" component={AthleteTabNavigator} />
-          <Stack.Screen name="CoachMain" component={CoachTabNavigator} />
-          <Stack.Screen name="SessionDetail" component={SessionDetail} />
-          <Stack.Screen name="AthleteDetail" component={AthleteDetailTreinador} />
-          <Stack.Screen name="PlanEditor" component={PlanEditor} />
-          <Stack.Screen name="Assessment" component={AssessmentCreate} />
-          <Stack.Screen
-            name="ESRModal"
-            component={ESRModal}
-            options={{
-              presentation: "modal",
-              cardStyle: { backgroundColor: "transparent" },
-            }}
-          />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </GestureHandlerRootView>
+    <AuthProvider>
+      <FeedbackProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <NavigationContainer>
+            <StatusBar style="dark" />
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Splash" component={SplashWelcome} />
+              <Stack.Screen name="Auth" component={AuthLogin} />
+              <Stack.Screen name="AthleteMain" component={AthleteTabNavigator} />
+              <Stack.Screen name="CoachMain" component={CoachTabNavigator} />
+              <Stack.Screen name="SessionDetail" component={SessionDetail} />
+              <Stack.Screen name="AthleteDetail" component={AthleteDetailTreinador} />
+              <Stack.Screen name="PlanEditor" component={PlanEditor} />
+              <Stack.Screen name="Assessment" component={AssessmentCreate} />
+              <Stack.Screen name="Settings" component={Settings} />
+              <Stack.Screen
+                name="ESRModal"
+                component={ESRModal}
+                options={{
+                  presentation: "modal",
+                  cardStyle: { backgroundColor: "transparent" },
+                }}
+              />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </GestureHandlerRootView>
+      </FeedbackProvider>
+    </AuthProvider>
   )
 }
