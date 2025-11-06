@@ -37,6 +37,16 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const register = async (userData) => {
+    try {
+      const newUser = await authService.register(userData)
+      return { success: true, user: newUser }
+    } catch (error) {
+      console.log(" Register error:", error)
+      return { success: false, error: error.message || "Erro ao criar conta" }
+    }
+  }
+
   const logout = async () => {
     try {
       await authService.logout()
@@ -46,7 +56,22 @@ export function AuthProvider({ children }) {
     }
   }
 
-  return <AuthContext.Provider value={{ user, loading, login, logout }}>{children}</AuthContext.Provider>
+  const updateUser = async (updatedData) => {
+    try {
+      const updatedUser = await authService.updateUser(user.id, updatedData)
+      setUser(updatedUser)
+      return { success: true, user: updatedUser }
+    } catch (error) {
+      console.log(" Error updating user:", error)
+      throw error
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+      {children}
+    </AuthContext.Provider>
+  )
 }
 
 export function useAuth() {

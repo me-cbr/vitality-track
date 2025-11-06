@@ -2,14 +2,13 @@
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
-import { BellIcon, MoonIcon, LogOutIcon, ArrowLeftIcon } from "../components/Icons"
+import { BellIcon, LogOutIcon, ArrowLeftIcon, EditIcon, BluetoothIcon } from "../components/Icons"
 import { useAuth } from "../contexts/AuthContext"
 import { useState } from "react"
 
 export default function Settings({ navigation }) {
   const { user, logout } = useAuth()
   const [notifications, setNotifications] = useState(true)
-  const [darkMode, setDarkMode] = useState(false)
 
   const handleLogout = async () => {
     await logout()
@@ -28,7 +27,7 @@ export default function Settings({ navigation }) {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Conta</Text>
-          <View style={styles.card}>
+          <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("EditProfile")}>
             <View style={styles.userInfo}>
               <Text style={styles.userName}>{user?.name}</Text>
               <Text style={styles.userEmail}>{user?.email}</Text>
@@ -36,7 +35,11 @@ export default function Settings({ navigation }) {
                 <Text style={styles.userTypeText}>{user?.type === "athlete" ? "Atleta" : "Treinador"}</Text>
               </View>
             </View>
-          </View>
+            <View style={styles.editButton}>
+              <EditIcon color={colors.primary} size={20} />
+              <Text style={styles.editText}>Editar</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -54,23 +57,25 @@ export default function Settings({ navigation }) {
                 thumbColor={colors.surface}
               />
             </View>
-
-            <View style={styles.divider} />
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingLeft}>
-                <MoonIcon color={colors.text} size={20} />
-                <Text style={styles.settingText}>Modo Escuro</Text>
-              </View>
-              <Switch
-                value={darkMode}
-                onValueChange={setDarkMode}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.surface}
-              />
-            </View>
           </View>
         </View>
+
+        {user?.type === "athlete" && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Integrações</Text>
+            <View style={styles.card}>
+              <TouchableOpacity style={styles.integrationItem}>
+                <View style={styles.settingLeft}>
+                  <BluetoothIcon color={colors.primary} size={20} />
+                  <View>
+                    <Text style={styles.settingText}>Dispositivos Externos</Text>
+                    <Text style={styles.integrationSubtext}>Conectar smartwatch ou monitor cardíaco</Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre</Text>
@@ -167,6 +172,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: colors.primary,
   },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  editText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: colors.primary,
+  },
   settingItem: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -182,6 +200,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.text,
     fontWeight: "500",
+  },
+  integrationItem: {
+    paddingVertical: spacing.sm,
+  },
+  integrationSubtext: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
   divider: {
     height: 1,

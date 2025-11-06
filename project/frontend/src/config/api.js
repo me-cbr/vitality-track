@@ -1,6 +1,8 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import { __DEV__ } from "react-native"
 
+export const USE_MOCK_DATA = true // Set to false when backend is ready
+
 // Configure your backend URL here
 // For development: use your local IP address (e.g., 'http://192.168.1.100:8000')
 // For production: use your deployed backend URL

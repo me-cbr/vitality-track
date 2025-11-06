@@ -2,7 +2,7 @@
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
-import { UserIcon, SettingsIcon, HeartIcon } from "../components/Icons"
+import { UserIcon, SettingsIcon, HeartIcon, EditIcon } from "../components/Icons"
 import { useAuth } from "../contexts/AuthContext"
 
 export default function ProfileAtleta({ navigation }) {
@@ -12,6 +12,9 @@ export default function ProfileAtleta({ navigation }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Perfil</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")} style={styles.headerButton}>
+          <EditIcon color={colors.primary} size={24} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -30,15 +33,15 @@ export default function ProfileAtleta({ navigation }) {
               <View style={styles.dataGrid}>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Peso</Text>
-                  <Text style={styles.dataValue}>{user?.weight || 75} kg</Text>
+                  <Text style={styles.dataValue}>{user?.weight || "--"} kg</Text>
                 </View>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Altura</Text>
-                  <Text style={styles.dataValue}>{user?.height || 1.78} m</Text>
+                  <Text style={styles.dataValue}>{user?.height || "--"} m</Text>
                 </View>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Idade</Text>
-                  <Text style={styles.dataValue}>{user?.age || 28} anos</Text>
+                  <Text style={styles.dataValue}>{user?.age || "--"} anos</Text>
                 </View>
               </View>
             </View>
@@ -50,14 +53,14 @@ export default function ProfileAtleta({ navigation }) {
                   <HeartIcon color={colors.primary} size={20} />
                   <View style={styles.hrInfo}>
                     <Text style={styles.hrLabel}>FC Repouso</Text>
-                    <Text style={styles.hrValue}>60 bpm</Text>
+                    <Text style={styles.hrValue}>{user?.restingHeartRate || "--"} bpm</Text>
                   </View>
                 </View>
                 <View style={styles.hrItem}>
                   <HeartIcon color={colors.danger} size={20} />
                   <View style={styles.hrInfo}>
                     <Text style={styles.hrLabel}>FC Máxima</Text>
-                    <Text style={styles.hrValue}>192 bpm</Text>
+                    <Text style={styles.hrValue}>{user?.maxHeartRate || "--"} bpm</Text>
                   </View>
                 </View>
               </View>
@@ -70,7 +73,7 @@ export default function ProfileAtleta({ navigation }) {
             <Text style={styles.cardTitle}>Informações Profissionais</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>CREF</Text>
-              <Text style={styles.infoValue}>{user?.cref || "123456"}</Text>
+              <Text style={styles.infoValue}>{user?.cref || "--"}</Text>
             </View>
           </View>
         )}
@@ -92,6 +95,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: spacing.lg,
     paddingTop: 60,
     backgroundColor: colors.surface,
@@ -102,6 +108,9 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: colors.text,
+  },
+  headerButton: {
+    padding: spacing.xs,
   },
   content: {
     flex: 1,

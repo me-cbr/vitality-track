@@ -10,8 +10,8 @@ import { colors } from "./src/theme/colors"
 import { AuthProvider } from "./src/contexts/AuthContext"
 import { FeedbackProvider } from "./src/contexts/FeedbackContext"
 
-import SplashWelcome from "./src/screens/SplashWelcome"
 import AuthLogin from "./src/screens/AuthLogin"
+import AuthRegister from "./src/screens/AuthRegister"
 import AtletaHome from "./src/screens/AtletaHome"
 import TreinadorDashboard from "./src/screens/TreinadorDashboard"
 import ESRModal from "./src/screens/ESRModal"
@@ -24,6 +24,7 @@ import PlanEditor from "./src/screens/PlanEditor"
 import AssessmentCreate from "./src/screens/AssessmentCreate"
 import Feedbacks from "./src/screens/Feedbacks"
 import Settings from "./src/screens/Settings"
+import EditProfile from "./src/screens/EditProfile"
 
 import { HomeIcon, ListIcon, ChartIcon, FeedbackIcon, UserIcon } from "./src/components/Icons"
 
@@ -154,8 +155,8 @@ export default function App() {
           <NavigationContainer>
             <StatusBar style="dark" />
             <Stack.Navigator screenOptions={{ headerShown: false }}>
-              <Stack.Screen name="Splash" component={SplashWelcome} />
               <Stack.Screen name="Auth" component={AuthLogin} />
+              <Stack.Screen name="Register" component={AuthRegister} />
               <Stack.Screen name="AthleteMain" component={AthleteTabNavigator} />
               <Stack.Screen name="CoachMain" component={CoachTabNavigator} />
               <Stack.Screen name="SessionDetail" component={SessionDetail} />
@@ -163,6 +164,7 @@ export default function App() {
               <Stack.Screen name="PlanEditor" component={PlanEditor} />
               <Stack.Screen name="Assessment" component={AssessmentCreate} />
               <Stack.Screen name="Settings" component={Settings} />
+              <Stack.Screen name="EditProfile" component={EditProfile} />
               <Stack.Screen
                 name="ESRModal"
                 component={ESRModal}

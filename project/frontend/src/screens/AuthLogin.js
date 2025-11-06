@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform } from "react-native"
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
 import LoadingButton from "../components/LoadingButton"
 import Toast from "../components/Toast"
@@ -88,6 +88,12 @@ export default function AuthLogin({ navigation }) {
           </View>
 
           <LoadingButton title="Entrar" onPress={handleSubmit} loading={loading} style={{ marginTop: spacing.lg }} />
+
+          <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Register")}>
+            <Text style={styles.registerText}>
+              Não tem uma conta? <Text style={styles.registerLink}>Cadastre-se</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -169,5 +175,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textSecondary,
     fontFamily: "monospace",
+  },
+  registerButton: {
+    alignItems: "center",
+    paddingVertical: spacing.md,
+    marginTop: spacing.sm,
+  },
+  registerText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  registerLink: {
+    color: colors.primary,
+    fontWeight: "700",
   },
 })

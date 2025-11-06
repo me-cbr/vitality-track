@@ -1,7 +1,13 @@
-import { apiClient } from "../config/api"
+import { apiClient, USE_MOCK_DATA } from "../config/api"
+import { mockFeedbacks } from "../config/mockData"
 
 export const feedbackService = {
   async getFeedbacks() {
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      return mockFeedbacks
+    }
+
     try {
       return await apiClient.get("/feedbacks")
     } catch (error) {
@@ -11,6 +17,11 @@ export const feedbackService = {
   },
 
   async getFeedbacksByAthlete(athleteId) {
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      return mockFeedbacks.filter((f) => f.atleta_id === athleteId)
+    }
+
     try {
       return await apiClient.get(`/feedbacks?athlete_id=${athleteId}`)
     } catch (error) {
@@ -20,6 +31,18 @@ export const feedbackService = {
   },
 
   async createFeedback(feedbackData) {
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 500))
+      const newFeedback = {
+        id: mockFeedbacks.length + 1,
+        ...feedbackData,
+        data: new Date().toISOString(),
+        lido: false,
+      }
+      mockFeedbacks.unshift(newFeedback)
+      return newFeedback
+    }
+
     try {
       return await apiClient.post("/feedbacks", feedbackData)
     } catch (error) {
@@ -29,6 +52,15 @@ export const feedbackService = {
   },
 
   async markAsRead(feedbackId) {
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      const feedback = mockFeedbacks.find((f) => f.id === feedbackId)
+      if (feedback) {
+        feedback.lido = true
+      }
+      return feedback
+    }
+
     try {
       return await apiClient.patch(`/feedbacks/${feedbackId}`, { read: true })
     } catch (error) {
@@ -38,6 +70,15 @@ export const feedbackService = {
   },
 
   async deleteFeedback(feedbackId) {
+    if (USE_MOCK_DATA) {
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      const index = mockFeedbacks.findIndex((f) => f.id === feedbackId)
+      if (index > -1) {
+        mockFeedbacks.splice(index, 1)
+      }
+      return { success: true }
+    }
+
     try {
       return await apiClient.delete(`/feedbacks/${feedbackId}`)
     } catch (error) {

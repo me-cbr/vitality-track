@@ -14,6 +14,7 @@ import { useEffect, useRef, useState } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
 import { athleteService } from "../services/athleteService"
 import { useAuth } from "../contexts/AuthContext"
+import AddAthleteModal from "./AddAthleteModal"
 
 export default function TreinadorDashboard({ navigation }) {
   const { user } = useAuth()
@@ -21,6 +22,7 @@ export default function TreinadorDashboard({ navigation }) {
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -52,7 +54,6 @@ export default function TreinadorDashboard({ navigation }) {
       })
     } catch (error) {
       console.error(" Error loading coach data:", error)
-      // Set empty data on error
       setAthletes([])
       setStats(null)
     } finally {
@@ -85,6 +86,14 @@ export default function TreinadorDashboard({ navigation }) {
 
   return (
     <View style={styles.container}>
+      <AddAthleteModal
+        visible={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={() => {
+          loadData()
+        }}
+      />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -174,17 +183,19 @@ export default function TreinadorDashboard({ navigation }) {
                   <View style={styles.athleteAvatar}>
                     <Text style={styles.athleteInitials}>
                       {athlete.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
+                        ? athlete.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                        : "??"}
                     </Text>
                   </View>
                   <View style={styles.athleteInfo}>
-                    <Text style={styles.athleteName}>{athlete.name}</Text>
+                    <Text style={styles.athleteName}>{athlete.name || "Atleta"}</Text>
                     <View style={styles.athleteMetrics}>
-                      <Text style={styles.athleteMetric}>{athlete.age} anos</Text>
+                      <Text style={styles.athleteMetric}>{athlete.age || 0} anos</Text>
                       <View style={styles.metricDot} />
-                      <Text style={styles.athleteMetric}>❤️ {athlete.hrRep} bpm</Text>
+                      <Text style={styles.athleteMetric}>❤️ {athlete.hrRep || 0} bpm</Text>
                     </View>
                   </View>
                 </View>
@@ -199,21 +210,14 @@ export default function TreinadorDashboard({ navigation }) {
           )}
         </View>
 
-        {/* Quick Actions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Ações Rápidas</Text>
           <View style={styles.actionGrid}>
-            <TouchableOpacity style={[styles.actionCard, shadows.sm]}>
+            <TouchableOpacity style={[styles.actionCard, shadows.sm]} onPress={() => setShowAddModal(true)}>
               <View style={[styles.actionIcon, { backgroundColor: colors.primary + "15" }]}>
-                <Text style={styles.actionEmoji}>📝</Text>
+                <Text style={styles.actionEmoji}>➕</Text>
               </View>
-              <Text style={styles.actionLabel}>Novo Treino</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionCard, shadows.sm]}>
-              <View style={[styles.actionIcon, { backgroundColor: colors.success + "15" }]}>
-                <Text style={styles.actionEmoji}>📊</Text>
-              </View>
-              <Text style={styles.actionLabel}>Relatório</Text>
+              <Text style={styles.actionLabel}>Adicionar Atleta</Text>
             </TouchableOpacity>
           </View>
         </View>
