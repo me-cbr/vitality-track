@@ -1,85 +1,141 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native"
-import { colors } from "../theme/colors"
-import { ListIcon, ClockIcon } from "../components/Icons"
+"use client"
+
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native"
+import { useState, useEffect } from "react"
+import { colors, spacing, borderRadius, shadows } from "../theme/colors"
+import { ClockIcon, ActivityIcon, CheckCircleIcon } from "../components/Icons"
+import { trainingService } from "../services/trainingService"
+import { useAuth } from "../contexts/AuthContext"
 
 export default function SessionsList({ navigation }) {
-  const sessions = [
-    {
-      id: 1,
-      name: "Treino de Força",
-      date: "2025-01-20",
-      time: "14:00",
-      zone: "Zona 4 - Anaeróbica",
-      status: "Concluído",
-    },
-    {
-      id: 2,
-      name: "Treino Aeróbico",
-      date: "2025-01-22",
-      time: "09:00",
-      zone: "Zona 2 - Aeróbica",
-      status: "Agendado",
-    },
-    {
-      id: 3,
-      name: "Recuperação Ativa",
-      date: "2025-01-23",
-      time: "16:00",
-      zone: "Zona 1 - Recuperação",
-      status: "Agendado",
-    },
-  ]
+  const { user } = useAuth()
+  const [sessions, setSessions] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+
+  useEffect(() => {
+    loadSessions()
+  }, [user])
+
+  const loadSessions = async () => {
+    setLoading(true)
+    try {
+      if (user?.id) {
+        const fetchedSessions = await trainingService.getSessions(user.id)
+        setSessions(fetchedSessions)
+      }
+    } catch (error) {
+      console.error("Error loading sessions:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadSessions()
+    setRefreshing(false)
+  }
+
+  const getStatusColor = (status) => {
+    return status === "concluido" ? colors.success : colors.warning
+  }
 
   const getZoneColor = (zone) => {
-    if (zone.includes("Zona 1")) return colors.zone1
-    if (zone.includes("Zona 2")) return colors.zone2
-    if (zone.includes("Zona 3")) return colors.zone3
-    if (zone.includes("Zona 4")) return colors.zone4
-    if (zone.includes("Zona 5")) return colors.zone5
-    return colors.neutral
+    return colors[`zone${zone}`] || colors.primary
   }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando sessões...</Text>
+      </View>
+    )
+  }
+
+  const completedSessions = sessions.filter((s) => s.status === "concluido")
+  const upcomingSessions = sessions.filter((s) => s.status !== "concluido")
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Minhas Sessões</Text>
-        <Text style={styles.subtitle}>Histórico de treinos e próximas sessões</Text>
+        <Text style={styles.subtitle}>
+          {completedSessions.length} concluídas · {upcomingSessions.length} próximas
+        </Text>
       </View>
 
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {sessions.map((session) => (
-          <TouchableOpacity
-            key={session.id}
-            style={styles.sessionCard}
-            onPress={() => navigation.navigate("SessionDetail", { sessionId: session.id })}
-          >
-            <View style={styles.sessionHeader}>
-              <View style={styles.sessionIcon}>
-                <ListIcon color={colors.primary} size={24} />
-              </View>
-              <View style={styles.sessionInfo}>
-                <Text style={styles.sessionName}>{session.name}</Text>
-                <View style={styles.sessionMeta}>
-                  <ClockIcon color={colors.textSecondary} size={14} />
-                  <Text style={styles.sessionDate}>
-                    {session.date} às {session.time}
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: session.status === "Concluído" ? colors.success : colors.warning },
-                ]}
+      <ScrollView
+        style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+      >
+        {upcomingSessions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Próximas Sessões</Text>
+            {upcomingSessions.map((session) => (
+              <TouchableOpacity
+                key={session.id}
+                style={[styles.sessionCard, shadows.sm]}
+                onPress={() => navigation.navigate("SessionDetail", { sessionId: session.id })}
+                activeOpacity={0.85}
               >
-                <Text style={styles.statusText}>{session.status}</Text>
-              </View>
-            </View>
-            <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.zone) }]}>
-              <Text style={styles.zoneText}>{session.zone}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
+                <View style={styles.sessionLeft}>
+                  <View style={styles.timeContainer}>
+                    <ClockIcon color={colors.primary} size={14} />
+                    <Text style={styles.timeText}>{session.dayLabel || "Hoje"}</Text>
+                  </View>
+                  <View style={styles.sessionInfo}>
+                    <Text style={styles.sessionName}>{session.title}</Text>
+                    <View style={styles.sessionMeta}>
+                      <ActivityIcon color={colors.textSecondary} size={12} />
+                      <Text style={styles.durationText}>{session.duracao} min</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.zone) }]}>
+                  <Text style={styles.zoneText}>Z{session.zone}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {completedSessions.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Concluídas Recentemente</Text>
+            {completedSessions.map((session) => (
+              <TouchableOpacity
+                key={session.id}
+                style={[styles.sessionCard, styles.completedCard, shadows.sm]}
+                onPress={() => navigation.navigate("SessionDetail", { sessionId: session.id })}
+                activeOpacity={0.85}
+              >
+                <View style={styles.sessionLeft}>
+                  <CheckCircleIcon color={colors.success} size={20} />
+                  <View style={styles.sessionInfo}>
+                    <Text style={[styles.sessionName, styles.completedText]}>{session.title}</Text>
+                    <View style={styles.sessionMeta}>
+                      <Text style={styles.durationText}>{session.duracao} min</Text>
+                    </View>
+                  </View>
+                </View>
+                <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.zone) }]}>
+                  <Text style={styles.zoneText}>Z{session.zone}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {sessions.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>📋</Text>
+            <Text style={styles.emptyText}>Nenhuma sessão disponível</Text>
+            <Text style={styles.emptySubtext}>Fale com seu treinador para agendar treinos</Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   )
@@ -87,90 +143,143 @@ export default function SessionsList({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: spacing.md,
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.neutralBg,
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   header: {
-    padding: 24,
-    paddingTop: 60,
-    backgroundColor: colors.surface,
+    padding: spacing.lg,
+    paddingTop: spacing.xl,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
+    fontWeight: "500",
   },
   scrollView: {
     flex: 1,
-    padding: 16,
+  },
+  section: {
+    padding: spacing.lg,
+    paddingBottom: 0,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   sessionCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderWidth: 1,
     borderColor: colors.border,
   },
-  sessionHeader: {
+  completedCard: {
+    opacity: 0.7,
+  },
+  sessionLeft: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    gap: spacing.md,
   },
-  sessionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: colors.primaryLight,
-    justifyContent: "center",
+  timeContainer: {
+    backgroundColor: colors.primary + "15",
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    flexDirection: "row",
     alignItems: "center",
-    marginRight: 12,
+    gap: spacing.xs,
+    minWidth: 60,
+    justifyContent: "center",
+  },
+  timeText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.primary,
   },
   sessionInfo: {
     flex: 1,
   },
   sessionName: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
+  },
+  completedText: {
+    textDecorationLine: "line-through",
+    color: colors.textSecondary,
   },
   sessionMeta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: spacing.xs,
   },
-  sessionDate: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    marginLeft: 4,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
+  durationText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: colors.surface,
+    color: colors.textSecondary,
+    fontWeight: "500",
   },
   zoneBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignSelf: "flex-start",
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: spacing.sm,
   },
   zoneText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: colors.surface,
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.white,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxl * 3,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: spacing.md,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
   },
 })

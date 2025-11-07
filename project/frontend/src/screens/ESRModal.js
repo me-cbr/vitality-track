@@ -4,10 +4,15 @@ import { useState } from "react"
 import { View, Text, TouchableOpacity, TextInput, Modal, StyleSheet, ScrollView } from "react-native"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
 import { XIcon } from "../components/Icons"
+import { useAuth } from "../contexts/AuthContext" // Corrected import path from "context" to "contexts" and using default import
+import { esrService } from "../services/esrService" // Updated to use named import
 
-export default function ESRModal({ navigation }) {
+export default function ESRModal({ navigation, route }) {
   const [esrValue, setEsrValue] = useState(5)
   const [comment, setComment] = useState("")
+  const [loading, setLoading] = useState(false)
+  const { user } = useAuth()
+  const esrTypeParam = route?.params?.tipo || "Recuperacao"
 
   const getESRColor = (value) => {
     if (value <= 3) return colors.danger
@@ -15,16 +20,30 @@ export default function ESRModal({ navigation }) {
     return colors.success
   }
 
-  const handleSubmit = () => {
-    // Save ESR value
-    navigation.goBack()
+  const handleSubmit = async () => {
+    setLoading(true)
+    try {
+      const esrData = {
+        tipo: esrTypeParam, // "Recuperacao" or "Borg"
+        valor: esrValue,
+        data: new Date().toISOString(),
+        atleta_id: user?.id,
+      }
+
+      await esrService.createESRRecord(esrData)
+
+      navigation.goBack()
+    } catch (error) {
+      console.error("ESR submission error:", error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <Modal visible={true} animationType="slide" transparent={true} onRequestClose={() => navigation.goBack()}>
       <View style={styles.overlay}>
         <View style={styles.container}>
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Registrar Escala Subjetiva</Text>
             <TouchableOpacity onPress={() => navigation.goBack()} style={styles.closeButton}>
@@ -33,14 +52,12 @@ export default function ESRModal({ navigation }) {
           </View>
 
           <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-            {/* ESR Display */}
             <View style={[styles.esrDisplay, { backgroundColor: getESRColor(esrValue) }]}>
               <Text style={styles.esrEmoji}>❤️</Text>
               <Text style={styles.esrValue}>{esrValue}</Text>
               <Text style={styles.esrLabel}>Nível de Esforço Percebido</Text>
             </View>
 
-            {/* Slider */}
             <View style={[styles.sliderCard, shadows.md]}>
               <Text style={styles.sliderTitle}>Selecione seu nível</Text>
               <View style={styles.sliderContainer}>
@@ -63,7 +80,6 @@ export default function ESRModal({ navigation }) {
               </View>
             </View>
 
-            {/* Comment */}
             <View style={[styles.commentCard, shadows.md]}>
               <View style={styles.commentHeader}>
                 <Text style={styles.commentEmoji}>💬</Text>
@@ -81,7 +97,6 @@ export default function ESRModal({ navigation }) {
               />
             </View>
 
-            {/* Buttons */}
             <View style={styles.buttons}>
               <TouchableOpacity
                 style={[styles.button, styles.cancelButton]}

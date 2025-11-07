@@ -15,11 +15,19 @@ export function FeedbackProvider({ children }) {
     setError(null)
     try {
       const data = await feedbackService.getFeedbacks()
-      setFeedbacks(data)
+      // Normalize field names from API to frontend
+      const normalized = data.map((f) => ({
+        id: f.id,
+        mensagem: f.mensagem || f.message,
+        data: f.data || f.date,
+        atleta_id: f.atleta_id || f.athlete_id || f.athleteId,
+        treinador_id: f.treinador_id || f.coach_id || f.coachId,
+        lido: f.lido || f.read || false,
+      }))
+      setFeedbacks(normalized)
     } catch (err) {
-      console.error(" Error fetching feedbacks:", err)
+      console.error("Error fetching feedbacks:", err)
       setError(err.message)
-      // Keep empty array on error
       setFeedbacks([])
     } finally {
       setLoading(false)
@@ -28,11 +36,19 @@ export function FeedbackProvider({ children }) {
 
   const addFeedback = async (feedback) => {
     try {
-      const newFeedback = await feedbackService.createFeedback(feedback)
+      // Ensure consistent field names when sending
+      const feedbackData = {
+        mensagem: feedback.mensagem || feedback.message,
+        data: feedback.data || new Date().toISOString(),
+        atleta_id: feedback.atleta_id || feedback.athlete_id,
+        treinador_id: feedback.treinador_id || feedback.coach_id,
+        lido: false,
+      }
+      const newFeedback = await feedbackService.createFeedback(feedbackData)
       setFeedbacks((prev) => [newFeedback, ...prev])
       return newFeedback
     } catch (err) {
-      console.error(" Error adding feedback:", err)
+      console.error("Error adding feedback:", err)
       throw err
     }
   }
@@ -40,19 +56,19 @@ export function FeedbackProvider({ children }) {
   const markAsRead = async (feedbackId) => {
     try {
       await feedbackService.markAsRead(feedbackId)
-      setFeedbacks((prev) => prev.map((f) => (f.id === feedbackId ? { ...f, read: true } : f)))
+      setFeedbacks((prev) => prev.map((f) => (f.id === feedbackId ? { ...f, lido: true } : f)))
     } catch (err) {
-      console.error(" Error marking feedback as read:", err)
+      console.error("Error marking feedback as read:", err)
       throw err
     }
   }
 
   const getFeedbacksByAthlete = (athleteId) => {
-    return feedbacks.filter((f) => f.athleteId === athleteId)
+    return feedbacks.filter((f) => f.atleta_id === athleteId)
   }
 
   const getUnreadCount = () => {
-    return feedbacks.filter((f) => !f.read).length
+    return feedbacks.filter((f) => !f.lido).length
   }
 
   return (

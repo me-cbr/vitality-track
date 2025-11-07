@@ -9,9 +9,9 @@ export const esrService = {
     }
 
     try {
-      return await apiClient.get(`/esr?athlete_id=${athleteId}`)
+      return await apiClient.get(`/esr?atleta_id=${athleteId}`)
     } catch (error) {
-      console.error(" Error fetching ESR records:", error)
+      console.error("Error fetching ESR records:", error)
       throw error
     }
   },
@@ -21,8 +21,10 @@ export const esrService = {
       await new Promise((resolve) => setTimeout(resolve, 500))
       const newRecord = {
         id: mockESRRecords.length + 1,
-        ...esrData,
-        data: new Date().toISOString(),
+        tipo: esrData.tipo || "Recuperacao",
+        valor: esrData.valor,
+        data: esrData.data || new Date().toISOString(),
+        atleta_id: esrData.atleta_id,
       }
       mockESRRecords.unshift(newRecord)
       return newRecord
@@ -31,7 +33,7 @@ export const esrService = {
     try {
       return await apiClient.post("/esr", esrData)
     } catch (error) {
-      console.error(" Error creating ESR record:", error)
+      console.error("Error creating ESR record:", error)
       throw error
     }
   },
@@ -44,9 +46,9 @@ export const esrService = {
     }
 
     try {
-      return await apiClient.get(`/esr/latest?athlete_id=${athleteId}`)
+      return await apiClient.get(`/esr/latest?atleta_id=${athleteId}`)
     } catch (error) {
-      console.error(" Error fetching latest ESR:", error)
+      console.error("Error fetching latest ESR:", error)
       throw error
     }
   },
@@ -65,13 +67,13 @@ export const esrService = {
 
     try {
       const params = new URLSearchParams({
-        athlete_id: athleteId,
+        atleta_id: athleteId,
         start_date: startDate,
         end_date: endDate,
       })
       return await apiClient.get(`/esr/history?${params}`)
     } catch (error) {
-      console.error(" Error fetching ESR history:", error)
+      console.error("Error fetching ESR history:", error)
       throw error
     }
   },

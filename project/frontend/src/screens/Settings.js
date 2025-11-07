@@ -2,7 +2,7 @@
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
-import { BellIcon, LogOutIcon, ArrowLeftIcon, EditIcon, BluetoothIcon } from "../components/Icons"
+import { BellIcon, LogOutIcon, ArrowLeftIcon, EditIcon } from "../components/Icons"
 import { useAuth } from "../contexts/AuthContext"
 import { useState } from "react"
 
@@ -53,29 +53,12 @@ export default function Settings({ navigation }) {
               <Switch
                 value={notifications}
                 onValueChange={setNotifications}
-                trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor={colors.surface}
+                trackColor={{ false: colors.border, true: colors.primary + "50" }}
+                thumbColor={notifications ? colors.primary : colors.textSecondary}
               />
             </View>
           </View>
         </View>
-
-        {user?.type === "athlete" && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Integrações</Text>
-            <View style={styles.card}>
-              <TouchableOpacity style={styles.integrationItem}>
-                <View style={styles.settingLeft}>
-                  <BluetoothIcon color={colors.primary} size={20} />
-                  <View>
-                    <Text style={styles.settingText}>Dispositivos Externos</Text>
-                    <Text style={styles.integrationSubtext}>Conectar smartwatch ou monitor cardíaco</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Sobre</Text>
@@ -104,43 +87,44 @@ export default function Settings({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.neutralBg,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: spacing.lg,
-    paddingTop: 60,
-    backgroundColor: colors.surface,
+    paddingTop: spacing.xl,
+    backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   backButton: {
     marginRight: spacing.md,
+    padding: spacing.sm,
   },
   title: {
     fontSize: 28,
-    fontWeight: "700",
+    fontWeight: "800",
     color: colors.text,
+    letterSpacing: -0.5,
   },
   content: {
     flex: 1,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   section: {
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 12,
+    fontWeight: "700",
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
-    marginLeft: spacing.xs,
+    marginBottom: spacing.md,
     textTransform: "uppercase",
     letterSpacing: 0.5,
   },
   card: {
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     borderWidth: 1,
@@ -151,25 +135,25 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   userName: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   userEmail: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   userTypeBadge: {
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.primary + "15",
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
   },
   userTypeText: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontSize: 11,
+    fontWeight: "700",
     color: colors.primary,
   },
   editButton: {
@@ -177,12 +161,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: spacing.xs,
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     paddingVertical: spacing.xs,
   },
   editText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
     color: colors.primary,
   },
   settingItem: {
@@ -194,56 +178,49 @@ const styles = StyleSheet.create({
   settingLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   settingText: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.text,
-    fontWeight: "500",
-  },
-  integrationItem: {
-    paddingVertical: spacing.sm,
-  },
-  integrationSubtext: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
+    fontWeight: "600",
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: spacing.xs,
+    marginVertical: spacing.md,
   },
   infoItem: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   infoLabel: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
+    fontWeight: "600",
   },
   infoValue: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "700",
     color: colors.text,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.surface,
+    backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
     marginBottom: spacing.xxl,
     borderWidth: 2,
     borderColor: colors.danger,
     gap: spacing.sm,
   },
   logoutText: {
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontWeight: "700",
     color: colors.danger,
   },
 })
