@@ -1,21 +1,72 @@
 "use client"
 
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Animated } from "react-native"
-import { useEffect, useRef } from "react"
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Animated,
+  ActivityIndicator,
+  RefreshControl,
+} from "react-native"
+import { useEffect, useRef, useState } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
+import { esrService } from "../services/esrService"
+import { trainingService } from "../services/trainingService"
+import { athleteService } from "../services/athleteService"
+import { useAuth } from "../contexts/AuthContext"
+import { ClockIcon, ActivityIcon } from "../components/Icons"
 
 export default function AtletaHome({ navigation }) {
-  const lastESR = 6
-  const weeklyProgress = 0.8
+  const { user } = useAuth()
+  const [lastESR, setLastESR] = useState(null)
+  const [weeklyProgress, setWeeklyProgress] = useState(null)
+  const [upcomingSessions, setUpcomingSessions] = useState([])
+  const [nextSession, setNextSession] = useState(null)
+  const [stats, setStats] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
+    loadData()
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 600,
       useNativeDriver: true,
     }).start()
   }, [])
+
+  const loadData = async () => {
+    if (!user?.id) return
+
+    try {
+      setLoading(true)
+      const [esrData, sessionsData, statsData] = await Promise.all([
+        esrService.getLatestESR(user.id).catch(() => null),
+        trainingService.getSessions(user.id).catch(() => []),
+        athleteService.getAthleteStats(user.id).catch(() => null),
+      ])
+
+      setLastESR(esrData)
+      const upcoming = sessionsData.filter((s) => s.status !== "concluido")
+      setNextSession(upcoming[0] || null)
+      setUpcomingSessions(upcoming.slice(0, 3))
+      setStats(statsData)
+      setWeeklyProgress(statsData?.weeklyProgress || null)
+    } catch (error) {
+      console.error(" Error loading athlete data:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const onRefresh = async () => {
+    setRefreshing(true)
+    await loadData()
+    setRefreshing(false)
+  }
 
   const getESRColor = (value) => {
     if (value <= 3) return colors.danger
@@ -29,129 +80,209 @@ export default function AtletaHome({ navigation }) {
     return "Ótimo"
   }
 
+  const getMotivationalMessage = () => {
+    if (!lastESR) return "Registre seu ESR para começar!"
+    if (lastESR.value >= 8) return "Você está em ótima forma! Continue assim! 💪"
+    if (lastESR.value >= 6) return "Boa recuperação! Pronto para treinar! 🔥"
+    if (lastESR.value >= 4) return "Recuperação moderada. Vá com calma hoje. 🧘"
+    return "Priorize o descanso hoje. Seu corpo precisa! 😴"
+  }
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando dados...</Text>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Bem-vindo, Rafael</Text>
-          <Text style={styles.subGreeting}>Vamos treinar hoje?</Text>
+          <Text style={styles.greeting}>Olá, {user?.name?.split(" ")[0] || "Atleta"}! 👋</Text>
+          <Text style={styles.subGreeting}>{getMotivationalMessage()}</Text>
         </View>
 
-        {/* Weekly Progress Card */}
-        <Animated.View style={[styles.progressCard, shadows.md, { opacity: fadeAnim }]}>
-          <View style={styles.progressHeader}>
-            <View>
-              <Text style={styles.progressTitle}>Progresso Semanal</Text>
-              <Text style={styles.progressSubtitle}>4 de 5 sessões completas</Text>
+        {/* Quick Actions */}
+        <Animated.View style={[styles.quickActions, { opacity: fadeAnim }]}>
+          <TouchableOpacity
+            style={[styles.quickActionCard, shadows.sm]}
+            onPress={() => navigation.navigate("Sessions")}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.secondary + "15" }]}>
+              <Text style={styles.quickActionEmoji}>📋</Text>
             </View>
-            <View style={styles.progressBadge}>
-              <Text style={styles.progressBadgeText}>80%</Text>
+            <Text style={styles.quickActionText}>Ver Treinos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.quickActionCard, shadows.sm]}
+            onPress={() => navigation.navigate("History")}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.action + "15" }]}>
+              <Text style={styles.quickActionEmoji}>📊</Text>
             </View>
-          </View>
-          <View style={styles.progressBarContainer}>
-            <View style={[styles.progressBar, { width: `${weeklyProgress * 100}%` }]} />
-          </View>
-          <Text style={styles.progressLabel}>Sessão de hoje: Treino Intervalado - 18h00</Text>
+            <Text style={styles.quickActionText}>Histórico</Text>
+          </TouchableOpacity>
         </Animated.View>
 
-        {/* ESR Card - Featured */}
-        <Animated.View style={[styles.esrCard, { backgroundColor: getESRColor(lastESR) }, { opacity: fadeAnim }]}>
-          <View style={styles.esrContent}>
-            <View style={styles.esrHeader}>
+        {/* Progress Card */}
+        {weeklyProgress && (
+          <Animated.View style={[styles.progressCard, shadows.md, { opacity: fadeAnim }]}>
+            <View style={styles.progressHeader}>
               <View>
-                <View style={styles.esrTitleRow}>
-                  <Text style={styles.esrEmoji}>❤️</Text>
-                  <View>
-                    <Text style={styles.esrTitle}>Escala Subjetiva (ESR)</Text>
-                    <Text style={styles.esrSubtitle}>Avaliação 2h atrás</Text>
-                  </View>
+                <Text style={styles.progressTitle}>Progresso Semanal</Text>
+                <Text style={styles.progressSubtitle}>
+                  {weeklyProgress.completed} de {weeklyProgress.total} sessões completas
+                </Text>
+              </View>
+              <View style={styles.progressBadge}>
+                <Text style={styles.progressBadgeText}>{Math.round(weeklyProgress.percentage)}%</Text>
+              </View>
+            </View>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${weeklyProgress.percentage}%` }]} />
+            </View>
+          </Animated.View>
+        )}
+
+        {/* ESR Card */}
+        {lastESR && (
+          <Animated.View
+            style={[styles.esrCard, { backgroundColor: getESRColor(lastESR.value) }, { opacity: fadeAnim }]}
+          >
+            <View style={styles.esrContent}>
+              <View style={styles.esrHeader}>
+                <View>
+                  <Text style={styles.esrTitle}>Última Avaliação ESR</Text>
+                  <Text style={styles.esrSubtitle}>Como você está se sentindo</Text>
+                </View>
+                <View style={styles.esrValueContainer}>
+                  <Text style={styles.esrValue}>{lastESR.value}</Text>
+                  <Text style={styles.esrLabel}>{getESRLabel(lastESR.value)}</Text>
                 </View>
               </View>
-              <View style={styles.esrValueContainer}>
-                <Text style={styles.esrValue}>{lastESR}</Text>
-                <Text style={styles.esrLabel}>{getESRLabel(lastESR)}</Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Stats Grid */}
+        {stats && (
+          <Animated.View style={[styles.statsGrid, { opacity: fadeAnim }]}>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.primary + "15" }]}>
+                <Text style={styles.statEmoji}>💪</Text>
+              </View>
+              <Text style={styles.statValue}>
+                {stats.weeklySessionsCompleted}/{stats.weeklySessionsTotal}
+              </Text>
+              <Text style={styles.statLabel}>Treinos Semana</Text>
+            </View>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.success + "15" }]}>
+                <Text style={styles.statEmoji}>🔥</Text>
+              </View>
+              <Text style={styles.statValue}>{stats.streak || 0}</Text>
+              <Text style={styles.statLabel}>Dias Seguidos</Text>
+            </View>
+            <View style={[styles.statCard, shadows.sm]}>
+              <View style={[styles.statIcon, { backgroundColor: colors.action + "15" }]}>
+                <Text style={styles.statEmoji}>⏱️</Text>
+              </View>
+              <Text style={styles.statValue}>{stats.totalMinutes || 0}</Text>
+              <Text style={styles.statLabel}>Min. Totais</Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Upcoming Sessions Section */}
+        {upcomingSessions.length > 1 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Próximas Sessões</Text>
+              <TouchableOpacity onPress={() => navigation.navigate("Sessions")}>
+                <Text style={styles.sectionLink}>Ver todas</Text>
+              </TouchableOpacity>
+            </View>
+
+            {upcomingSessions.slice(1).map((session) => (
+              <TouchableOpacity
+                key={session.id}
+                style={[styles.sessionCard, shadows.sm]}
+                onPress={() => navigation.navigate("SessionDetail", { sessionId: session.id })}
+                activeOpacity={0.85}
+              >
+                <View style={styles.sessionLeft}>
+                  <View style={styles.sessionTime}>
+                    <Text style={styles.sessionTimeText}>{session.dayLabel || "Hoje"}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.sessionTitle}>{session.title}</Text>
+                    <Text style={styles.sessionTime2}>{session.timeLabel}</Text>
+                  </View>
+                </View>
+                <View
+                  style={[styles.zoneIndicator, { backgroundColor: colors[`zone${session.zone}`] || colors.primary }]}
+                >
+                  <Text style={styles.zoneText}>Z{session.zone}</Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Next Session Card */}
+        {nextSession && (
+          <Animated.View style={[styles.nextSessionCard, shadows.lg, { opacity: fadeAnim }]}>
+            <View style={styles.nextSessionHeader}>
+              <Text style={styles.nextSessionLabel}>PRÓXIMO TREINO</Text>
+              <View
+                style={[
+                  styles.nextSessionZone,
+                  { backgroundColor: colors[`zone${nextSession.zone}`] || colors.primary },
+                ]}
+              >
+                <Text style={styles.nextSessionZoneText}>ZONA {nextSession.zone}</Text>
+              </View>
+            </View>
+            <Text style={styles.nextSessionTitle}>{nextSession.title}</Text>
+            <View style={styles.nextSessionMeta}>
+              <View style={styles.nextSessionMetaItem}>
+                <ClockIcon color={colors.textSecondary} size={16} />
+                <Text style={styles.nextSessionMetaText}>{nextSession.timeLabel}</Text>
+              </View>
+              <View style={styles.nextSessionMetaItem}>
+                <ActivityIcon color={colors.textSecondary} size={16} />
+                <Text style={styles.nextSessionMetaText}>{nextSession.duracao || 45} min</Text>
               </View>
             </View>
             <TouchableOpacity
-              style={styles.esrButton}
-              onPress={() => navigation.navigate("ESRModal")}
+              style={styles.nextSessionButton}
+              onPress={() => navigation.navigate("SessionDetail", { sessionId: nextSession.id })}
               activeOpacity={0.85}
             >
-              <Text style={styles.esrButtonText}>REGISTRAR NOVO ESR</Text>
+              <Text style={styles.nextSessionButtonText}>VER DETALHES</Text>
             </TouchableOpacity>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        )}
 
-        {/* Stats Grid */}
-        <Animated.View style={[styles.statsGrid, { opacity: fadeAnim }]}>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.primary + "15" }]}>
-              <Text style={styles.statEmoji}>💪</Text>
-            </View>
-            <Text style={styles.statValue}>4/5</Text>
-            <Text style={styles.statLabel}>Sessões Semana</Text>
+        {/* Empty State */}
+        {!weeklyProgress && !lastESR && !stats && upcomingSessions.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyEmoji}>📊</Text>
+            <Text style={styles.emptyText}>Nenhum dado disponível</Text>
+            <Text style={styles.emptySubtext}>Seus dados de treino aparecerão aqui</Text>
           </View>
-          <View style={[styles.statCard, shadows.sm]}>
-            <View style={[styles.statIcon, { backgroundColor: colors.success + "15" }]}>
-              <Text style={styles.statEmoji}>🔥</Text>
-            </View>
-            <Text style={styles.statValue}>342</Text>
-            <Text style={styles.statLabel}>Carga Total (TSS)</Text>
-          </View>
-        </Animated.View>
-
-        {/* Upcoming Sessions Section */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Próximas Sessões</Text>
-            <TouchableOpacity onPress={() => navigation.navigate("Sessions")}>
-              <Text style={styles.sectionLink}>Ver todas</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={[styles.sessionCard, shadows.sm]}
-            onPress={() => navigation.navigate("SessionDetail", { sessionId: "1" })}
-            activeOpacity={0.85}
-          >
-            <View style={styles.sessionLeft}>
-              <View style={styles.sessionTime}>
-                <Text style={styles.sessionTimeText}>Hoje</Text>
-              </View>
-              <View>
-                <Text style={styles.sessionTitle}>Treino Intervalado Z4</Text>
-                <Text style={styles.sessionTime2}>18h00 - 45 min</Text>
-              </View>
-            </View>
-            <View style={[styles.zoneIndicator, { backgroundColor: colors.zone4 }]}>
-              <Text style={styles.zoneText}>Z4</Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.sessionCard, shadows.sm]}
-            onPress={() => navigation.navigate("SessionDetail", { sessionId: "2" })}
-            activeOpacity={0.85}
-          >
-            <View style={styles.sessionLeft}>
-              <View style={styles.sessionTime}>
-                <Text style={styles.sessionTimeText}>Amanhã</Text>
-              </View>
-              <View>
-                <Text style={styles.sessionTitle}>Recuperação Z1-Z2</Text>
-                <Text style={styles.sessionTime2}>19h00 - 60 min</Text>
-              </View>
-            </View>
-            <View style={[styles.zoneIndicator, { backgroundColor: colors.zone1 }]}>
-              <Text style={styles.zoneText}>Z1</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        )}
       </ScrollView>
     </View>
   )
@@ -161,6 +292,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.neutralBg,
+  },
+  centerContent: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   scrollView: {
     flex: 1,
@@ -231,11 +371,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: borderRadius.full,
   },
-  progressLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: "500",
-  },
   esrCard: {
     borderRadius: borderRadius.xl,
     padding: spacing.lg,
@@ -254,15 +389,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-  },
-  esrTitleRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: spacing.md,
-  },
-  esrEmoji: {
-    fontSize: 28,
-    marginTop: spacing.xs,
   },
   esrTitle: {
     fontSize: 16,
@@ -289,21 +415,6 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.85)",
     marginTop: spacing.xs,
     fontWeight: "600",
-  },
-  esrButton: {
-    height: 52,
-    backgroundColor: "rgba(255,255,255,0.25)",
-    borderRadius: borderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: "rgba(255,255,255,0.35)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  esrButtonText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: colors.white,
-    letterSpacing: 0.3,
   },
   statsGrid: {
     flexDirection: "row",
@@ -410,5 +521,119 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "800",
     color: colors.white,
+  },
+  emptyState: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: spacing.xxl * 2,
+  },
+  emptyEmoji: {
+    fontSize: 64,
+    marginBottom: spacing.md,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+  },
+  nextSessionCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.xl,
+    padding: spacing.xl,
+    marginBottom: spacing.lg,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  nextSessionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.md,
+  },
+  nextSessionLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.primary,
+    letterSpacing: 1,
+  },
+  nextSessionZone: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+  },
+  nextSessionZoneText: {
+    fontSize: 10,
+    fontWeight: "800",
+    color: colors.white,
+    letterSpacing: 0.5,
+  },
+  nextSessionTitle: {
+    fontSize: 24,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: spacing.md,
+    letterSpacing: -0.5,
+  },
+  nextSessionMeta: {
+    flexDirection: "row",
+    gap: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  nextSessionMetaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  nextSessionMetaText: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+  nextSessionButton: {
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.lg,
+    alignItems: "center",
+  },
+  nextSessionButtonText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.white,
+    letterSpacing: 0.5,
+  },
+  quickActions: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  quickActionCard: {
+    flex: 1,
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    alignItems: "center",
+  },
+  quickActionIcon: {
+    width: 56,
+    height: 56,
+    borderRadius: borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  quickActionEmoji: {
+    fontSize: 28,
+  },
+  quickActionText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.text,
+    textAlign: "center",
   },
 })
