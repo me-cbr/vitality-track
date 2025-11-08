@@ -35,25 +35,31 @@ export default function AtletaHome({ navigation }) {
       duration: 600,
       useNativeDriver: true,
     }).start()
-  }, [])
+  }, [user])
 
   const loadData = async () => {
-    if (!user?.id) return
+    if (!user?.id && !user?.atleta_id && !user?.athleteId) {
+      console.log("No valid user ID available:", user)
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
+      const athleteId = user.atleta_id || user.athleteId || user.id
       const [esrData, sessionsData, statsData, assessmentsData] = await Promise.all([
-        esrService.getLatestESR(user.id).catch(() => null),
-        trainingService.getSessions(user.id).catch(() => []),
-        athleteService.getAthleteStats(user.id).catch(() => null),
-        trainingService.getAssessments(user.id).catch(() => []),
+        esrService.getLatestESR(athleteId).catch(() => null),
+        trainingService.getSessions(athleteId).catch(() => []),
+        athleteService.getAthleteStats(athleteId).catch(() => null),
+        trainingService.getAssessments(athleteId).catch(() => []),
       ])
 
       setLastESR(esrData)
       const upcoming = sessionsData.filter((s) => s.status !== "concluido")
       setNextSession(upcoming[0] || null)
       setStats(statsData)
-      setRecentAssessments((assessmentsData || []).sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 3))
+      const assessmentsSorted = (assessmentsData || []).sort((a, b) => new Date(b.data) - new Date(a.data))
+      setRecentAssessments(assessmentsSorted.slice(0, 3))
     } catch (error) {
       console.error("Error loading athlete data:", error)
     } finally {
@@ -81,9 +87,9 @@ export default function AtletaHome({ navigation }) {
 
   const getMotivationalMessage = () => {
     if (!lastESR) return "Registre seu ESR para começar!"
-    if (lastESR.value >= 8) return "Você está em ótima forma! 💪"
-    if (lastESR.value >= 6) return "Pronto para treinar! 🔥"
-    if (lastESR.value >= 4) return "Vá com calma hoje. 🧘"
+    if (lastESR.valor >= 8) return "Você está em ótima forma! 💪"
+    if (lastESR.valor >= 6) return "Pronto para treinar! 🔥"
+    if (lastESR.valor >= 4) return "Vá com calma hoje. 🧘"
     return "Priorize o descanso! 😴"
   }
 
@@ -106,7 +112,9 @@ export default function AtletaHome({ navigation }) {
       >
         {/* Header with Greeting */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>Olá, {user?.name?.split(" ")[0] || "Atleta"}! 👋</Text>
+          <Text style={styles.greeting}>
+            Olá, {user?.nome?.split(" ")[0] || user?.name?.split(" ")[0] || "Atleta"}! 👋
+          </Text>
           <Text style={styles.motivationalMessage}>{getMotivationalMessage()}</Text>
         </View>
 
@@ -115,21 +123,16 @@ export default function AtletaHome({ navigation }) {
             <View style={styles.nextSessionBadge}>
               <Text style={styles.nextSessionBadgeText}>PRÓXIMO TREINO</Text>
             </View>
-            <Text style={styles.nextSessionTitle}>{nextSession.title}</Text>
+            <Text style={styles.nextSessionTitle}>{nextSession.nome || nextSession.title}</Text>
             <View style={styles.nextSessionDetails}>
               <View style={styles.detailItem}>
                 <ClockIcon color={colors.white} size={16} />
-                <Text style={styles.detailText}>{nextSession.timeLabel || "Agora"}</Text>
+                <Text style={styles.detailText}>{nextSession.duracao || 45} min</Text>
               </View>
               <View style={styles.detailItem}>
                 <ActivityIcon color={colors.white} size={16} />
-                <Text style={styles.detailText}>{nextSession.duracao || 45} min</Text>
+                <Text style={styles.detailText}>{nextSession.tipo || "Treino"}</Text>
               </View>
-            </View>
-            <View
-              style={[styles.nextSessionZone, { backgroundColor: colors[`zone${nextSession.zone}`] || colors.primary }]}
-            >
-              <Text style={styles.zoneLabel}>ZONA {nextSession.zone}</Text>
             </View>
             <TouchableOpacity
               style={styles.nextSessionButton}
@@ -145,35 +148,28 @@ export default function AtletaHome({ navigation }) {
         {stats && (
           <Animated.View style={[styles.quickStats, { opacity: fadeAnim }]}>
             <View style={[styles.quickStatItem, shadows.sm]}>
+              <Text style={styles.quickStatEmoji}>📈</Text>
+              <Text style={styles.quickStatValue}>{stats.averageESR?.toFixed(1) || 0}</Text>
+              <Text style={styles.quickStatLabel}>ESR Média</Text>
+            </View>
+            <View style={[styles.quickStatItem, shadows.sm]}>
               <Text style={styles.quickStatEmoji}>💪</Text>
-              <Text style={styles.quickStatValue}>
-                {stats.weeklySessionsCompleted}/{stats.weeklySessionsTotal}
-              </Text>
-              <Text style={styles.quickStatLabel}>Treinos Semana</Text>
-            </View>
-            <View style={[styles.quickStatItem, shadows.sm]}>
-              <Text style={styles.quickStatEmoji}>🔥</Text>
-              <Text style={styles.quickStatValue}>{stats.streak || 0}</Text>
-              <Text style={styles.quickStatLabel}>Sequência</Text>
-            </View>
-            <View style={[styles.quickStatItem, shadows.sm]}>
-              <Text style={styles.quickStatEmoji}>⏱️</Text>
-              <Text style={styles.quickStatValue}>{stats.totalMinutes || 0}</Text>
-              <Text style={styles.quickStatLabel}>Min. Total</Text>
+              <Text style={styles.quickStatValue}>{stats.adherence || 0}%</Text>
+              <Text style={styles.quickStatLabel}>Adesão</Text>
             </View>
           </Animated.View>
         )}
 
         {lastESR && (
           <Animated.View
-            style={[styles.esrCard, { backgroundColor: getESRColor(lastESR.value) }, shadows.md, { opacity: fadeAnim }]}
+            style={[styles.esrCard, { backgroundColor: getESRColor(lastESR.valor) }, shadows.md, { opacity: fadeAnim }]}
           >
             <View style={styles.esrContent}>
               <Text style={styles.esrTitle}>Sua Recuperação</Text>
               <View style={styles.esrValueRow}>
                 <View style={styles.esrValueContainer}>
-                  <Text style={styles.esrValue}>{lastESR.value}</Text>
-                  <Text style={styles.esrStatus}>{getESRLabel(lastESR.value)}</Text>
+                  <Text style={styles.esrValue}>{lastESR.valor}</Text>
+                  <Text style={styles.esrStatus}>{getESRLabel(lastESR.valor)}</Text>
                 </View>
                 <Text style={styles.esrDescription}>Escala de 0 a 10</Text>
               </View>
@@ -321,19 +317,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "rgba(255,255,255,0.9)",
     fontWeight: "600",
-  },
-  nextSessionZone: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    alignSelf: "flex-start",
-    marginBottom: spacing.md,
-  },
-  zoneLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.white,
-    letterSpacing: 0.5,
   },
   nextSessionButton: {
     backgroundColor: colors.white,

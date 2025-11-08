@@ -1,14 +1,14 @@
 // Complete Mock Data for VitalityCheck App
+// Updated with recent dates: current date is 08/11/2025
 // Focused on demo users: atleta@email.com and treinador@email.com
-// Follows database schema exactly
 
 // ============================================================================
-// DEMO USERS - Main focus for app demonstration
+// DEMO USERS
 // ============================================================================
 
 export const mockCoaches = [
   {
-    id: 1,
+    id: 2,
     nome: "Dr. Carlos Oliveira",
     email: "treinador@email.com",
     cref: "012345/SP",
@@ -19,10 +19,6 @@ export const mockCoaches = [
   },
 ]
 
-// ============================================================================
-// DEMO ATHLETE - Main focus for app demonstration
-// ============================================================================
-
 export const mockAthletes = [
   {
     id: 1,
@@ -32,58 +28,50 @@ export const mockAthletes = [
     peso: 75,
     altura: 1.78,
     frequencia_cardiaca_repouso: 60,
-    treinador_id: 1,
+    treinador_id: 2,
+    coach_id: 2,
     created_at: "2024-12-15T10:00:00Z",
-    last_login: "2025-01-21T08:30:00Z",
+    last_login: "2025-11-08T08:30:00Z",
     status: "ativo",
     ultimaESR: 7,
-    ultimaAvaliacao: "2025-01-20",
+    ultimaAvaliacao: "2025-11-07",
     adherence: 85,
     notes: "Atleta dedicado, bom compromisso com treinos. Responde bem a treinos de força.",
   },
 ]
 
-// ============================================================================
-// TRAINING PLANS (PlanoTreinamento)
-// ============================================================================
-
 export const mockTrainingPlans = [
   {
     id: 1,
-    nome: "Plano de Força - Janeiro",
+    nome: "Plano de Força - Novembro",
     descricao:
       "Desenvolvimento de força muscular com foco em membros superiores e inferiores. Ciclo de 4 semanas com progressão gradual baseado na Metodologia de Karvonen.",
-    data_inicio: "2025-01-01",
-    data_fim: "2025-01-31",
+    data_inicio: "2025-11-01",
+    data_fim: "2025-11-30",
     atleta_id: 1,
-    treinador_id: 1,
-    created_at: "2024-12-15T10:30:00Z",
-    updated_at: "2025-01-15T14:00:00Z",
+    treinador_id: 2,
+    created_at: "2024-10-15T10:30:00Z",
+    updated_at: "2025-11-05T14:00:00Z",
     status: "ativo",
     objetivo: "Aumentar força muscular em 20%",
   },
   {
     id: 2,
-    nome: "Condicionamento Aeróbico - Fevereiro",
+    nome: "Condicionamento Aeróbico - Dezembro",
     descricao:
       "Treino de condicionamento aeróbico para melhorar capacidade cardiovascular. Foco em resistência e queima de gordura com intensidade controlada por zona cardíaca.",
-    data_inicio: "2025-02-01",
-    data_fim: "2025-02-28",
+    data_inicio: "2025-12-01",
+    data_fim: "2025-12-31",
     atleta_id: 1,
-    treinador_id: 1,
-    created_at: "2024-12-10T14:15:00Z",
-    updated_at: "2025-01-20T09:30:00Z",
+    treinador_id: 2,
+    created_at: "2024-10-10T14:15:00Z",
+    updated_at: "2025-11-05T09:30:00Z",
     status: "planejado",
     objetivo: "Melhorar VO2 máx em 15%",
   },
 ]
 
-// ============================================================================
-// TRAINING SESSIONS (SessaoTreinamento) - Atomic Training Units
-// ============================================================================
-
 export const mockTrainingSessions = [
-  // Plan 1: Força - January
   {
     id: 1,
     nome: "Treino de Força - Trem Superior",
@@ -92,13 +80,13 @@ export const mockTrainingSessions = [
     tipo: "Força",
     intensidade: "Alta",
     duracao: 60,
-    data: "2025-01-20T14:00:00Z",
+    data: "2025-11-08T14:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     status: "concluido",
     notas: "Atleta completou com folga. Pode aumentar peso na próxima.",
-    created_at: "2025-01-15T10:00:00Z",
+    created_at: "2025-11-05T10:00:00Z",
   },
   {
     id: 2,
@@ -108,13 +96,13 @@ export const mockTrainingSessions = [
     tipo: "Cardio",
     intensidade: "Moderada",
     duracao: 45,
-    data: "2025-01-22T09:00:00Z",
+    data: "2025-11-06T09:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 1,
-    status: "agendado",
-    notas: "Segunda sessão do plano. Recuperação ativa.",
-    created_at: "2025-01-15T10:00:00Z",
+    treinador_id: 2,
+    status: "concluido",
+    notas: "Sessão de recuperação.",
+    created_at: "2025-11-05T10:00:00Z",
   },
   {
     id: 3,
@@ -124,13 +112,13 @@ export const mockTrainingSessions = [
     tipo: "Força",
     intensidade: "Alta",
     duracao: 75,
-    data: "2025-01-23T16:00:00Z",
+    data: "2025-11-07T16:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 1,
-    status: "agendado",
-    notas: "Foco em forma. Antes de aumentar carga.",
-    created_at: "2025-01-15T10:00:00Z",
+    treinador_id: 2,
+    status: "concluido",
+    notas: "Foco em forma. Excelente execução.",
+    created_at: "2025-11-05T10:00:00Z",
   },
   {
     id: 4,
@@ -140,13 +128,13 @@ export const mockTrainingSessions = [
     tipo: "HIIT",
     intensidade: "Muito Alta",
     duracao: 30,
-    data: "2025-01-24T07:00:00Z",
+    data: "2025-11-04T07:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 1,
-    status: "agendado",
-    notas: "Apenas se recuperação ESR >= 6.",
-    created_at: "2025-01-15T10:00:00Z",
+    treinador_id: 2,
+    status: "concluido",
+    notas: "ESR estava em 8, treino ideal.",
+    created_at: "2025-11-01T10:00:00Z",
   },
   {
     id: 5,
@@ -156,13 +144,13 @@ export const mockTrainingSessions = [
     tipo: "Cardio",
     intensidade: "Moderada",
     duracao: 60,
-    data: "2025-01-25T06:30:00Z",
+    data: "2025-11-03T06:30:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 1,
-    status: "agendado",
+    treinador_id: 2,
+    status: "concluido",
     notas: "Final de semana. Foco em distância.",
-    created_at: "2025-01-15T10:00:00Z",
+    created_at: "2025-11-01T10:00:00Z",
   },
   {
     id: 6,
@@ -172,16 +160,14 @@ export const mockTrainingSessions = [
     tipo: "Recuperação",
     intensidade: "Leve",
     duracao: 30,
-    data: "2025-01-26T07:00:00Z",
+    data: "2025-11-02T07:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 1,
-    status: "agendado",
+    treinador_id: 2,
+    status: "concluido",
     notas: "Domingo - recuperação.",
-    created_at: "2025-01-15T10:00:00Z",
+    created_at: "2025-11-01T10:00:00Z",
   },
-
-  // Plan 2: Aeróbico - Fevereiro (future sessions)
   {
     id: 7,
     nome: "Circuito Aeróbico - Estação 1",
@@ -190,47 +176,27 @@ export const mockTrainingSessions = [
     tipo: "Cardio",
     intensidade: "Moderada",
     duracao: 50,
-    data: "2025-02-03T17:00:00Z",
+    data: "2025-11-09T17:00:00Z",
     plano_id: 2,
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     status: "agendado",
-    notas: "Primeira sessão da semana.",
-    created_at: "2024-12-10T14:30:00Z",
-  },
-  {
-    id: 8,
-    nome: "Treino em Pista",
-    descricao: "800m x 4 com recuperação 400m. Zona 3-4.",
-    zona_alvo: 3,
-    tipo: "Intervalado",
-    intensidade: "Alta",
-    duracao: 45,
-    data: "2025-02-05T18:30:00Z",
-    plano_id: 2,
-    atleta_id: 1,
-    treinador_id: 1,
-    status: "agendado",
-    notas: "Treino de velocidade.",
-    created_at: "2024-12-10T14:30:00Z",
+    notas: "Próxima sessão - semana atual.",
+    created_at: "2025-11-08T14:30:00Z",
   },
 ]
-
-// ============================================================================
-// PHYSICAL ASSESSMENTS (AvaliacaoFisica)
-// ============================================================================
 
 export const mockAvaliacoesFisicas = [
   {
     id: 1,
-    data: "2025-01-20T10:00:00Z",
+    data: "2025-11-07T10:00:00Z",
     frequencia_cardiaca: 60,
     observacoes:
       "Atleta em boa forma, pronto para aumentar carga. Respiração controlada durante avaliação. Excelente recuperação pós-esforço. Recomenda-se intensificar próximas sessões.",
     zona_treinamento: "Zona 3-4",
     atleta_id: 1,
-    treinador_id: 1,
-    created_at: "2025-01-20T10:15:00Z",
+    treinador_id: 2,
+    created_at: "2025-11-07T10:15:00Z",
     zonas_karvonen: {
       zona1: { min: 114, max: 133, label: "Recuperação (50-60% FCMax)" },
       zona2: { min: 133, max: 152, label: "Aeróbica (60-70% FCMax)" },
@@ -241,14 +207,14 @@ export const mockAvaliacoesFisicas = [
   },
   {
     id: 2,
-    data: "2025-01-15T14:30:00Z",
+    data: "2025-10-30T14:30:00Z",
     frequencia_cardiaca: 62,
     observacoes:
       "Excelente recuperação desde avaliação anterior. Atleta demonstra melhor condicionamento. FC mais baixa. Pronto para ciclo de força.",
     zona_treinamento: "Zona 2-3",
     atleta_id: 1,
-    treinador_id: 1,
-    created_at: "2025-01-15T14:45:00Z",
+    treinador_id: 2,
+    created_at: "2025-10-30T14:45:00Z",
     zonas_karvonen: {
       zona1: { min: 112, max: 131, label: "Recuperação (50-60% FCMax)" },
       zona2: { min: 131, max: 150, label: "Aeróbica (60-70% FCMax)" },
@@ -259,14 +225,14 @@ export const mockAvaliacoesFisicas = [
   },
   {
     id: 3,
-    data: "2025-01-08T09:15:00Z",
+    data: "2025-10-22T09:15:00Z",
     frequencia_cardiaca: 65,
     observacoes:
       "Primeira avaliação. Atleta com boa disposição e motivação. Recomenda-se período de adaptação de 2-3 semanas. Começar com intensidade leve.",
     zona_treinamento: "Zona 2-3",
     atleta_id: 1,
-    treinador_id: 1,
-    created_at: "2025-01-08T09:30:00Z",
+    treinador_id: 2,
+    created_at: "2025-10-22T09:30:00Z",
     zonas_karvonen: {
       zona1: { min: 117, max: 136, label: "Recuperação (50-60% FCMax)" },
       zona2: { min: 136, max: 155, label: "Aeróbica (60-70% FCMax)" },
@@ -277,146 +243,168 @@ export const mockAvaliacoesFisicas = [
   },
 ]
 
-// ============================================================================
-// SUBJECTIVE RECOVERY SCALE (EscalaSubjetiva) - Daily ESR Data
-// ============================================================================
-
 export const mockESRRecords = [
   {
     id: 1,
     tipo: "Recuperacao",
     valor: 7,
-    data: "2025-01-21T07:30:00Z",
+    data: "2025-11-08T07:30:00Z",
     atleta_id: 1,
-    created_at: "2025-01-21T07:35:00Z",
+    created_at: "2025-11-08T07:35:00Z",
   },
   {
     id: 2,
     tipo: "Recuperacao",
     valor: 8,
-    data: "2025-01-20T08:00:00Z",
+    data: "2025-11-07T08:00:00Z",
     atleta_id: 1,
-    created_at: "2025-01-20T08:05:00Z",
+    created_at: "2025-11-07T08:05:00Z",
   },
   {
     id: 3,
     tipo: "Recuperacao",
-    valor: 4,
-    data: "2025-01-19T07:15:00Z",
+    valor: 6,
+    data: "2025-11-06T07:15:00Z",
     atleta_id: 1,
-    created_at: "2025-01-19T07:20:00Z",
+    created_at: "2025-11-06T07:20:00Z",
   },
   {
     id: 4,
     tipo: "Recuperacao",
     valor: 9,
-    data: "2025-01-18T08:30:00Z",
+    data: "2025-11-05T08:30:00Z",
     atleta_id: 1,
-    created_at: "2025-01-18T08:35:00Z",
+    created_at: "2025-11-05T08:35:00Z",
   },
   {
     id: 5,
     tipo: "Recuperacao",
-    valor: 6,
-    data: "2025-01-17T07:45:00Z",
+    valor: 5,
+    data: "2025-11-04T07:45:00Z",
     atleta_id: 1,
-    created_at: "2025-01-17T07:50:00Z",
+    created_at: "2025-11-04T07:50:00Z",
   },
   {
     id: 6,
     tipo: "Recuperacao",
     valor: 8,
-    data: "2025-01-16T08:00:00Z",
+    data: "2025-11-03T08:00:00Z",
     atleta_id: 1,
-    created_at: "2025-01-16T08:05:00Z",
+    created_at: "2025-11-03T08:05:00Z",
   },
   {
     id: 7,
     tipo: "Recuperacao",
     valor: 10,
-    data: "2025-01-15T07:30:00Z",
+    data: "2025-11-02T07:30:00Z",
     atleta_id: 1,
-    created_at: "2025-01-15T07:35:00Z",
+    created_at: "2025-11-02T07:35:00Z",
   },
   {
     id: 8,
     tipo: "Recuperacao",
     valor: 7,
-    data: "2025-01-14T08:15:00Z",
+    data: "2025-11-01T08:15:00Z",
     atleta_id: 1,
-    created_at: "2025-01-14T08:20:00Z",
+    created_at: "2025-11-01T08:20:00Z",
   },
   {
     id: 9,
     tipo: "Recuperacao",
-    valor: 5,
-    data: "2025-01-13T07:00:00Z",
+    valor: 6,
+    data: "2025-10-31T07:00:00Z",
     atleta_id: 1,
-    created_at: "2025-01-13T07:05:00Z",
+    created_at: "2025-10-31T07:05:00Z",
   },
 ]
-
-// ============================================================================
-// FEEDBACK MESSAGES (Feedback)
-// ============================================================================
 
 export const mockFeedbacks = [
   {
     id: 1,
     mensagem: "Ótimo desempenho na sessão de força hoje! Sua técnica melhorou muito. Continue com essa intensidade!",
-    data: "2025-01-21T15:30:00Z",
+    data: "2025-11-08T15:30:00Z",
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     lido: false,
-    created_at: "2025-01-21T15:35:00Z",
+    created_at: "2025-11-08T15:35:00Z",
     tipo_mensagem: "elogio",
   },
   {
     id: 2,
     mensagem: "Sua recuperação está excelente nos últimos dias (ESR 7-8). Vamos aumentar a carga na próxima semana.",
-    data: "2025-01-20T09:00:00Z",
+    data: "2025-11-07T09:00:00Z",
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     lido: true,
-    created_at: "2025-01-20T09:05:00Z",
+    created_at: "2025-11-07T09:05:00Z",
     tipo_mensagem: "planejamento",
   },
   {
     id: 3,
     mensagem:
       "Foque em manter a respiração controlada durante os exercícios compostos. Você estava prendendo a respiração.",
-    data: "2025-01-19T14:20:00Z",
+    data: "2025-11-06T14:20:00Z",
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     lido: true,
-    created_at: "2025-01-19T14:25:00Z",
+    created_at: "2025-11-06T14:25:00Z",
     tipo_mensagem: "orientacao",
   },
   {
     id: 4,
-    mensagem: "Não faça a sessão de HIIT amanhã - sua ESR está em 4. Descanse mais.",
-    data: "2025-01-18T18:00:00Z",
+    mensagem: "Não faça a sessão de HIIT hoje - sua ESR está em 4. Descanse e recupere-se bem.",
+    data: "2025-11-04T18:00:00Z",
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     lido: true,
-    created_at: "2025-01-18T18:05:00Z",
+    created_at: "2025-11-04T18:05:00Z",
     tipo_mensagem: "alerta",
   },
   {
     id: 5,
-    mensagem: "Grande semana de treinos! Você completou 5/5 sessões programadas. Parabéns pela consistência!",
-    data: "2025-01-17T19:00:00Z",
+    mensagem: "Grande semana de treinos! Você completou 5/6 sessões programadas. Parabéns pela consistência!",
+    data: "2025-11-03T19:00:00Z",
     atleta_id: 1,
-    treinador_id: 1,
+    treinador_id: 2,
     lido: true,
-    created_at: "2025-01-17T19:05:00Z",
+    created_at: "2025-11-03T19:05:00Z",
+    tipo_mensagem: "elogio",
+  },
+  {
+    id: 6,
+    mensagem: "Muito bom o desempenho na última avaliação física! Sua frequência cardíaca de repouso melhorou.",
+    data: "2025-11-01T10:00:00Z",
+    atleta_id: 1,
+    treinador_id: 2,
+    lido: true,
+    created_at: "2025-11-01T10:05:00Z",
     tipo_mensagem: "elogio",
   },
 ]
 
-// ============================================================================
-// ATHLETE STATISTICS & DASHBOARD DATA
-// ============================================================================
+export const mockFeedbacksExpanded = [
+  ...mockFeedbacks,
+  {
+    id: 7,
+    mensagem: "Detectei padrão: sua ESR cai após treinos HIIT. Recomendo aumentar recuperação entre sessões.",
+    data: "2025-10-30T14:00:00Z",
+    atleta_id: 1,
+    treinador_id: 2,
+    lido: true,
+    created_at: "2025-10-30T14:05:00Z",
+    tipo_mensagem: "analise",
+  },
+  {
+    id: 8,
+    mensagem: "Seu progresso foi excelente este mês. Vamos intensificar no próximo ciclo de treinamento.",
+    data: "2025-10-28T11:00:00Z",
+    atleta_id: 1,
+    treinador_id: 2,
+    lido: true,
+    created_at: "2025-10-28T11:05:00Z",
+    tipo_mensagem: "planejamento",
+  },
+]
 
 export const mockAthleteStats = {
   1: {
@@ -429,12 +417,12 @@ export const mockAthleteStats = {
     totalMinutes: 285,
     averageESR: 6.8,
     lastESR: 7,
-    lastAssessment: "2025-01-20",
+    lastAssessment: "2025-11-07",
     nextSession: {
-      date: "2025-01-22",
-      time: "09:00",
-      name: "Cardio Aeróbico",
-      duration: 45,
+      date: "2025-11-09",
+      time: "17:00",
+      name: "Circuito Aeróbico",
+      duration: 50,
     },
     weekProgress: [
       { day: "Seg", completed: 0, scheduled: 1 },
@@ -448,10 +436,6 @@ export const mockAthleteStats = {
   },
 }
 
-// ============================================================================
-// MOCK USERS (for authentication/login)
-// ============================================================================
-
 export const mockUsers = [
   {
     id: 1,
@@ -460,6 +444,7 @@ export const mockUsers = [
     senha_hash: "hashed_password_123",
     tipo_usuario: "atleta",
     atleta_id: 1,
+    athleteId: 1,
     created_at: "2024-12-15T10:00:00Z",
   },
   {
@@ -468,14 +453,46 @@ export const mockUsers = [
     email: "treinador@email.com",
     senha_hash: "hashed_password_456",
     tipo_usuario: "treinador",
-    treinador_id: 1,
+    treinador_id: 2,
+    coachId: 2,
     created_at: "2024-11-01T14:00:00Z",
   },
 ]
 
-// ============================================================================
-// EXPORTS - All mock data for app usage
-// ============================================================================
+export const mockCoachDetails = {
+  2: {
+    id: 2,
+    nome: "Dr. Carlos Oliveira",
+    email: "treinador@email.com",
+    cref: "012345/SP",
+    especialidade: "Treinamento de Força e Condicionamento",
+    bio: "Especialista em treinamento de alta performance com 15 anos de experiência",
+    telefone: "(11) 98765-4321",
+    certificacoes: [
+      "Certificação NASM Personal Trainer",
+      "Especialização em Periodização do Treinamento",
+      "Certificação ISSN - Nutrição Esportiva",
+    ],
+    atletasAssociados: [1],
+    estatisticas: {
+      totalAtletas: 1,
+      atletasAtivos: 1,
+      sessoesMinistradasEsteMes: 6,
+      avaliacoesFisicas: 3,
+      feedbacksEnviados: 8,
+    },
+  },
+}
+
+export const mockTrainingLoadData = [
+  { date: "2025-11-08", load: 65, esrMediana: 7, sessoesConcluidas: 1 },
+  { date: "2025-11-07", load: 78, esrMediana: 8, sessoesConcluidas: 1 },
+  { date: "2025-11-06", load: 60, esrMediana: 6, sessoesConcluidas: 1 },
+  { date: "2025-11-05", load: 88, esrMediana: 9, sessoesConcluidas: 1 },
+  { date: "2025-11-04", load: 45, esrMediana: 5, sessoesConcluidas: 1 },
+  { date: "2025-11-03", load: 81, esrMediana: 8, sessoesConcluidas: 1 },
+  { date: "2025-11-02", load: 30, esrMediana: 10, sessoesConcluidas: 1 },
+]
 
 export default {
   mockCoaches,
@@ -485,6 +502,9 @@ export default {
   mockAvaliacoesFisicas,
   mockESRRecords,
   mockFeedbacks,
+  mockFeedbacksExpanded,
   mockAthleteStats,
   mockUsers,
+  mockCoachDetails,
+  mockTrainingLoadData,
 }

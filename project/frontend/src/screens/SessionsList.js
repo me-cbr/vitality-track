@@ -6,6 +6,7 @@ import { colors, spacing, borderRadius, shadows } from "../theme/colors"
 import { ClockIcon, ActivityIcon, CheckCircleIcon } from "../components/Icons"
 import { trainingService } from "../services/trainingService"
 import { useAuth } from "../contexts/AuthContext"
+import { getZoneColorByNumber } from "../utils/zoneUtils"
 
 export default function SessionsList({ navigation }) {
   const { user } = useAuth()
@@ -37,12 +38,12 @@ export default function SessionsList({ navigation }) {
     setRefreshing(false)
   }
 
-  const getStatusColor = (status) => {
-    return status === "concluido" ? colors.success : colors.warning
+  const getZoneColor = (zone) => {
+    return getZoneColorByNumber(zone)
   }
 
-  const getZoneColor = (zone) => {
-    return colors[`zone${zone}`] || colors.primary
+  const getStatusColor = (status) => {
+    return status === "concluido" ? colors.success : colors.warning
   }
 
   if (loading) {

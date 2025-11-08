@@ -10,7 +10,7 @@ export const trainingService = {
         .map((session) => ({
           ...session,
           title: session.nome || session.title,
-          timeLabel: session.hora || session.timeLabel,
+          timeLabel: session.hora || session.timeLabel || this.getDayLabel(session.data),
           dayLabel: this.getDayLabel(session.data),
           zone: this.extractZoneNumber(session.zona_alvo),
         }))
@@ -184,20 +184,19 @@ export const trainingService = {
     }
   },
 
-  async completeSession(sessionId, completionData) {
+  async completeSession(sessionId) {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       const session = mockTrainingSessions.find((s) => s.id === sessionId)
       if (session) {
         session.status = "concluido"
-        session.completionData = completionData
         return session
       }
       throw new Error("Session not found")
     }
 
     try {
-      return await apiClient.patch(`/sessoes-treinamento/${sessionId}/concluir`, completionData)
+      return await apiClient.patch(`/sessoes-treinamento/${sessionId}/concluir`, {})
     } catch (error) {
       console.error("Error completing session:", error)
       throw error
@@ -207,34 +206,17 @@ export const trainingService = {
   async getAssessments(atletaId) {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
-      return mockAvaliacoesFisicas.filter((a) => a.atleta_id === atletaId)
+      const assessments = mockAvaliacoesFisicas.filter((a) => a.atleta_id === atletaId)
+      console.log("Assessments retrieved for athlete", atletaId, ":", assessments)
+      return assessments
     }
 
     try {
+      console.log("Fetching assessments from API for athlete:", atletaId)
       const assessments = await apiClient.get(`/avaliacoes-fisicas?atleta_id=${atletaId}`)
       return assessments
     } catch (error) {
       console.error("Error fetching assessments:", error)
-      throw error
-    }
-  },
-
-  async createAssessment(assessmentData) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const newAssessment = {
-        id: mockAvaliacoesFisicas.length + 1,
-        ...assessmentData,
-        data: new Date().toISOString(),
-      }
-      mockAvaliacoesFisicas.push(newAssessment)
-      return newAssessment
-    }
-
-    try {
-      return await apiClient.post("/avaliacoes-fisicas", assessmentData)
-    } catch (error) {
-      console.error("Error creating assessment:", error)
       throw error
     }
   },
@@ -260,7 +242,8 @@ export const trainingService = {
 
   extractZoneNumber(zonaAlvo) {
     if (!zonaAlvo) return 3
-    const match = zonaAlvo.match(/Zona (\d)/)
+    if (typeof zonaAlvo === "number") return zonaAlvo
+    const match = zonaAlvo.toString().match(/(\d)/)
     return match ? Number.parseInt(match[1]) : 3
   },
 }

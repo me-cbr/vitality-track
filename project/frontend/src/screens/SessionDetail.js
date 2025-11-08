@@ -17,6 +17,7 @@ import { ArrowLeftIcon, HeartIcon, ClockIcon, ActivityIcon, CheckCircleIcon, XIc
 import { trainingService } from "../services/trainingService"
 import { useFeedback } from "../contexts/FeedbackContext"
 import { useAuth } from "../contexts/AuthContext"
+import { getZoneColorByNumber } from "../utils/zoneUtils"
 
 export default function SessionDetail({ navigation, route }) {
   const { sessionId } = route.params || {}
@@ -93,13 +94,7 @@ export default function SessionDetail({ navigation, route }) {
   }
 
   const getZoneColor = (zone) => {
-    if (!zone) return colors.primary
-    if (zone.includes("1")) return colors.zone1
-    if (zone.includes("2")) return colors.zone2
-    if (zone.includes("3")) return colors.zone3
-    if (zone.includes("4")) return colors.zone4
-    if (zone.includes("5")) return colors.zone5
-    return colors.primary
+    return getZoneColorByNumber(zone)
   }
 
   if (loading) {

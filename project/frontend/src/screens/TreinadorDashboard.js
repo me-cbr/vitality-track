@@ -32,30 +32,65 @@ export default function TreinadorDashboard({ navigation }) {
       duration: 600,
       useNativeDriver: true,
     }).start()
-  }, [])
+  }, [user?.id, user?.coachId])
 
   const loadData = async () => {
+    if (!user) {
+      console.log("No user available")
+      setLoading(false)
+      return
+    }
+
+    const coachId = user?.coachId || user?.treinador_id || user?.id
+
+    if (!coachId) {
+      console.log("No coachId found in user:", user)
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
-      const athletesData = await athleteService.getAthletes()
+      const athletesData = await athleteService.getAthletes(coachId)
+
+      if (!athletesData || athletesData.length === 0) {
+        console.log("No athletes found for coach", coachId)
+        setAthletes([])
+        setStats({
+          totalAthletes: 0,
+          activeAthletes: 0,
+          alertAthletes: 0,
+          adherence: 0,
+        })
+        setLoading(false)
+        return
+      }
+
       setAthletes(athletesData)
 
-      // Calculate stats from athletes data
-      const totalAthletes = athletesData.length
-      const activeAthletes = athletesData.filter((a) => a.status === "ativo").length
-      const alertAthletes = athletesData.filter((a) => a.esr && a.esr <= 4).length
-      const avgAdherence = athletesData.reduce((acc, a) => acc + (a.adherence || 0), 0) / totalAthletes || 0
+      const totalAthletes = athletesData?.length || 0
+      const activeAthletes = athletesData?.filter((a) => a?.status === "ativo")?.length || 0
+      const alertAthletes = athletesData?.filter((a) => a?.ultimaESR && a.ultimaESR <= 4)?.length || 0
+      const avgAdherence =
+        totalAthletes > 0
+          ? Math.round(athletesData.reduce((acc, a) => acc + (a?.adherence || 0), 0) / totalAthletes)
+          : 0
 
       setStats({
         totalAthletes,
         activeAthletes,
         alertAthletes,
-        adherence: Math.round(avgAdherence),
+        adherence: avgAdherence,
       })
     } catch (error) {
-      console.error(" Error loading coach data:", error)
+      console.error("Error loading coach data:", error)
       setAthletes([])
-      setStats(null)
+      setStats({
+        totalAthletes: 0,
+        activeAthletes: 0,
+        alertAthletes: 0,
+        adherence: 0,
+      })
     } finally {
       setLoading(false)
     }
@@ -82,7 +117,7 @@ export default function TreinadorDashboard({ navigation }) {
     )
   }
 
-  const alertAthlete = athletes.find((a) => a.esr && a.esr <= 4)
+  const alertAthlete = athletes?.find((a) => a?.ultimaESR && a.ultimaESR <= 4)
 
   return (
     <View style={styles.container}>
@@ -141,7 +176,7 @@ export default function TreinadorDashboard({ navigation }) {
               <View style={styles.alertContent}>
                 <Text style={styles.alertTitle}>Atenção Necessária</Text>
                 <Text style={styles.alertMessage}>
-                  {alertAthlete.name} (ESR {alertAthlete.esr}) - considere ajustar carga
+                  {alertAthlete.nome} (ESR {alertAthlete.ultimaESR}) - considere ajustar carga
                 </Text>
               </View>
             </View>
@@ -182,8 +217,8 @@ export default function TreinadorDashboard({ navigation }) {
                 <View style={styles.athleteHeader}>
                   <View style={styles.athleteAvatar}>
                     <Text style={styles.athleteInitials}>
-                      {athlete.name
-                        ? athlete.name
+                      {athlete.nome
+                        ? athlete.nome
                             .split(" ")
                             .map((n) => n[0])
                             .join("")
@@ -191,18 +226,18 @@ export default function TreinadorDashboard({ navigation }) {
                     </Text>
                   </View>
                   <View style={styles.athleteInfo}>
-                    <Text style={styles.athleteName}>{athlete.name || "Atleta"}</Text>
+                    <Text style={styles.athleteName}>{athlete.nome || "Atleta"}</Text>
                     <View style={styles.athleteMetrics}>
-                      <Text style={styles.athleteMetric}>{athlete.age || 0} anos</Text>
+                      <Text style={styles.athleteMetric}>{calculateAge(athlete.data_nascimento)} anos</Text>
                       <View style={styles.metricDot} />
-                      <Text style={styles.athleteMetric}>❤️ {athlete.hrRep || 0} bpm</Text>
+                      <Text style={styles.athleteMetric}>❤️ {athlete.frequencia_cardiaca_repouso} bpm</Text>
                     </View>
                   </View>
                 </View>
-                {athlete.esr && (
-                  <View style={[styles.esrBadge, { backgroundColor: getESRColor(athlete.esr) }]}>
+                {athlete.ultimaESR && (
+                  <View style={[styles.esrBadge, { backgroundColor: getESRColor(athlete.ultimaESR) }]}>
                     <Text style={styles.esrLabel}>ESR</Text>
-                    <Text style={styles.esrValue}>{athlete.esr}</Text>
+                    <Text style={styles.esrValue}>{athlete.ultimaESR}</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -224,6 +259,18 @@ export default function TreinadorDashboard({ navigation }) {
       </ScrollView>
     </View>
   )
+}
+
+function calculateAge(birthDate) {
+  if (!birthDate) return 0
+  const today = new Date()
+  const birth = new Date(birthDate)
+  let age = today.getFullYear() - birth.getFullYear()
+  const monthDiff = today.getMonth() - birth.getMonth()
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  return age
 }
 
 const styles = StyleSheet.create({

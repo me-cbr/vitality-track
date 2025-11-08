@@ -7,6 +7,7 @@ import { ArrowLeftIcon, ActivityIcon, EditIcon } from "../components/Icons"
 import { athleteService } from "../services/athleteService"
 import { trainingService } from "../services/trainingService"
 import { esrService } from "../services/esrService"
+import moment from "moment"
 
 export default function AthleteDetailTreinador({ navigation, route }) {
   const { athleteId } = route.params || {}
@@ -55,6 +56,10 @@ export default function AthleteDetailTreinador({ navigation, route }) {
     return "Ótimo"
   }
 
+  const calculateAge = (birthDate) => {
+    return moment().diff(birthDate, "years")
+  }
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -71,6 +76,9 @@ export default function AthleteDetailTreinador({ navigation, route }) {
       </View>
     )
   }
+
+  const displayAthlete = athlete || {}
+  const displayAge = displayAthlete?.data_nascimento ? calculateAge(displayAthlete.data_nascimento) : 0
 
   return (
     <View style={styles.container}>
@@ -101,19 +109,19 @@ export default function AthleteDetailTreinador({ navigation, route }) {
           <View style={styles.dataGrid}>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Peso</Text>
-              <Text style={styles.dataValue}>{athlete.peso || 0} kg</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.peso || 0} kg</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Altura</Text>
-              <Text style={styles.dataValue}>{athlete.altura || 0} m</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.altura || 0} m</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Idade</Text>
-              <Text style={styles.dataValue}>{athlete.age || 0} anos</Text>
+              <Text style={styles.dataValue}>{displayAge} anos</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>FC Rep.</Text>
-              <Text style={styles.dataValue}>{athlete.hrRep || athlete.frequencia_cardiaca_repouso || 0} bpm</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.frequencia_cardiaca_repouso || 0} bpm</Text>
             </View>
           </View>
         </View>

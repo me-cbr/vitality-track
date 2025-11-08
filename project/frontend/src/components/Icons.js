@@ -290,3 +290,12 @@ export function TrendingUpIcon({ color = "#000", size = 24 }) {
     </Svg>
   )
 }
+
+export function ZoneIcon({ color = "#000", size = 24 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth={2} />
+      <Path d="M12 7v10M7 12h10" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  )
+}
