@@ -1,15 +1,19 @@
 import { apiClient, USE_MOCK_DATA } from "../config/api"
-import { mockAthletes, mockUsers, mockAthleteStats } from "../config/mockData"
+import { mockAthletes, mockAthleteStats } from "../config/mockData"
 
 export const athleteService = {
-  async getAthletes() {
+  async getAthletes(coachId = null) {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
+      if (coachId) {
+        return mockAthletes.filter((a) => a.treinador_id === coachId)
+      }
       return mockAthletes
     }
 
     try {
-      const data = await apiClient.get("/athletes")
+      const url = coachId ? `/athletes?coach_id=${coachId}` : "/athletes"
+      const data = await apiClient.get(url)
       return data.map((athlete) => ({
         ...athlete,
         name: athlete.nome || athlete.name,
@@ -27,10 +31,15 @@ export const athleteService = {
     if (USE_MOCK_DATA) {
       await new Promise((resolve) => setTimeout(resolve, 500))
       const athlete = mockAthletes.find((a) => a.id === athleteId)
-      if (!athlete && athleteId === 1) {
-        return { ...mockUsers.athlete, ...mockAthletes[0] }
-      }
       return athlete
+        ? {
+            ...athlete,
+            name: athlete.nome || athlete.name,
+            age: calculateAge(athlete.data_nascimento),
+            hrRep: athlete.frequencia_cardiaca_repouso,
+            esr: athlete.ultimaESR,
+          }
+        : null
     }
 
     try {

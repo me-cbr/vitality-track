@@ -3,16 +3,18 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native"
 import { useState, useEffect } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
-import { ArrowLeftIcon, ActivityIcon, PlusIcon } from "../components/Icons"
+import { ArrowLeftIcon, ActivityIcon, EditIcon } from "../components/Icons"
 import { athleteService } from "../services/athleteService"
 import { trainingService } from "../services/trainingService"
 import { esrService } from "../services/esrService"
+import moment from "moment"
 
 export default function AthleteDetailTreinador({ navigation, route }) {
   const { athleteId } = route.params || {}
   const [athlete, setAthlete] = useState(null)
-  const [plans, setPlans] = useState([])
+  const [sessions, setSessions] = useState([])
   const [lastESR, setLastESR] = useState(null)
+  const [assessments, setAssessments] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -22,17 +24,19 @@ export default function AthleteDetailTreinador({ navigation, route }) {
   const loadAthleteData = async () => {
     try {
       setLoading(true)
-      const [athleteData, plansData, esrData] = await Promise.all([
+      const [athleteData, sessionsData, esrData, assessmentsData] = await Promise.all([
         athleteService.getAthleteById(athleteId),
-        trainingService.getTrainingPlans(athleteId),
+        trainingService.getSessions(athleteId),
         esrService.getLatestESR(athleteId).catch(() => null),
+        trainingService.getAssessments(athleteId).catch(() => []),
       ])
 
       setAthlete(athleteData)
-      setPlans(plansData || [])
+      setSessions(sessionsData || [])
       setLastESR(esrData)
+      setAssessments(assessmentsData || [])
     } catch (error) {
-      console.error(" Error loading athlete data:", error)
+      console.error("Error loading athlete data:", error)
     } finally {
       setLoading(false)
     }
@@ -52,6 +56,10 @@ export default function AthleteDetailTreinador({ navigation, route }) {
     return "Ótimo"
   }
 
+  const calculateAge = (birthDate) => {
+    return moment().diff(birthDate, "years")
+  }
+
   if (loading) {
     return (
       <View style={[styles.container, styles.centerContent]}>
@@ -68,6 +76,9 @@ export default function AthleteDetailTreinador({ navigation, route }) {
       </View>
     )
   }
+
+  const displayAthlete = athlete || {}
+  const displayAge = displayAthlete?.data_nascimento ? calculateAge(displayAthlete.data_nascimento) : 0
 
   return (
     <View style={styles.container}>
@@ -98,19 +109,19 @@ export default function AthleteDetailTreinador({ navigation, route }) {
           <View style={styles.dataGrid}>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Peso</Text>
-              <Text style={styles.dataValue}>{athlete.peso || 0} kg</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.peso || 0} kg</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Altura</Text>
-              <Text style={styles.dataValue}>{athlete.altura || 0} m</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.altura || 0} m</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Idade</Text>
-              <Text style={styles.dataValue}>{athlete.age || 0} anos</Text>
+              <Text style={styles.dataValue}>{displayAge} anos</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>FC Rep.</Text>
-              <Text style={styles.dataValue}>{athlete.hrRep || athlete.frequencia_cardiaca_repouso || 0} bpm</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.frequencia_cardiaca_repouso || 0} bpm</Text>
             </View>
           </View>
         </View>
@@ -128,47 +139,70 @@ export default function AthleteDetailTreinador({ navigation, route }) {
         </View>
 
         <View style={[styles.card, shadows.sm]}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Planos de Treinamento</Text>
-            <TouchableOpacity
-              style={styles.addPlanButton}
-              onPress={() => navigation.navigate("PlanEditor", { athleteId, mode: "create" })}
-            >
-              <PlusIcon color={colors.primary} size={20} />
-            </TouchableOpacity>
-          </View>
-
-          {plans.length === 0 ? (
-            <View style={styles.emptyPlans}>
-              <Text style={styles.emptyPlansText}>Nenhum plano criado ainda</Text>
-              <Text style={styles.emptyPlansSubtext}>Crie um plano para começar</Text>
+          <Text style={styles.cardTitle}>Avaliações Físicas</Text>
+          {assessments.length === 0 ? (
+            <View style={styles.emptyAssessments}>
+              <Text style={styles.emptyAssessmentsText}>Nenhuma avaliação registrada</Text>
+              <Text style={styles.emptyAssessmentsSubtext}>Crie uma avaliação física para este atleta</Text>
             </View>
           ) : (
-            <View style={styles.plansList}>
-              {plans.map((plan) => (
-                <TouchableOpacity
-                  key={plan.id}
-                  style={styles.planItem}
-                  onPress={() => navigation.navigate("PlanEditor", { athleteId, planId: plan.id, mode: "edit" })}
-                  activeOpacity={0.7}
-                >
-                  <View style={styles.planInfo}>
-                    <Text style={styles.planName}>{plan.nome}</Text>
-                    <Text style={styles.planDates}>
-                      {new Date(plan.data_inicio).toLocaleDateString("pt-BR")} -{" "}
-                      {new Date(plan.data_fim).toLocaleDateString("pt-BR")}
+            <View style={styles.assessmentsList}>
+              {assessments.map((assessment) => (
+                <View key={assessment.id} style={styles.assessmentItem}>
+                  <View style={styles.assessmentDate}>
+                    <Text style={styles.assessmentDateText}>
+                      {new Date(assessment.data).toLocaleDateString("pt-BR")}
                     </Text>
-                    <Text style={styles.planSessions}>{plan.sessoes?.length || 0} sessões</Text>
                   </View>
-                  <View
-                    style={[
-                      styles.planStatus,
-                      { backgroundColor: plan.status === "ativo" ? colors.success : colors.textSecondary },
-                    ]}
+                  <View style={styles.assessmentInfo}>
+                    <View style={styles.assessmentRow}>
+                      <Text style={styles.assessmentLabel}>FC:</Text>
+                      <Text style={styles.assessmentValue}>{assessment.frequencia_cardiaca} bpm</Text>
+                    </View>
+                    <View style={styles.assessmentRow}>
+                      <Text style={styles.assessmentLabel}>Zona:</Text>
+                      <Text style={styles.assessmentValue}>{assessment.zona_treinamento}</Text>
+                    </View>
+                    {assessment.observacoes && (
+                      <Text style={styles.assessmentObservation}>{assessment.observacoes}</Text>
+                    )}
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+        </View>
+
+        <View style={[styles.card, shadows.sm]}>
+          <View style={styles.cardHeader}>
+            <Text style={styles.cardTitle}>Sessões de Treino</Text>
+          </View>
+
+          {sessions.length === 0 ? (
+            <View style={styles.emptySessions}>
+              <Text style={styles.emptySessionsText}>Nenhuma sessão criada</Text>
+              <Text style={styles.emptySessionsSubtext}>Crie sessões de treino para este atleta</Text>
+            </View>
+          ) : (
+            <View style={styles.sessionsList}>
+              {sessions.map((session) => (
+                <View key={session.id} style={styles.sessionItem}>
+                  <View style={styles.sessionInfo}>
+                    <Text style={styles.sessionName}>{session.nome || session.title}</Text>
+                    <Text style={styles.sessionZone}>{session.zona_alvo || `Zona ${session.zone}`}</Text>
+                    <Text style={styles.sessionMeta}>
+                      {session.tipo} • {session.duracao}min • {session.data?.split("T")[0]}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("PlanEditor", { athleteId, sessionId: session.id, mode: "edit" })
+                    }
+                    style={styles.editButton}
                   >
-                    <Text style={styles.planStatusText}>{plan.status === "ativo" ? "Ativo" : "Inativo"}</Text>
-                  </View>
-                </TouchableOpacity>
+                    <EditIcon color={colors.primary} size={18} />
+                  </TouchableOpacity>
+                </View>
               ))}
             </View>
           )}
@@ -335,32 +369,24 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
     fontStyle: "italic",
   },
-  addPlanButton: {
-    width: 36,
-    height: 36,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.primary + "15",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  emptyPlans: {
+  emptySessions: {
     alignItems: "center",
     paddingVertical: spacing.xl,
   },
-  emptyPlansText: {
+  emptySessionsText: {
     fontSize: 15,
     fontWeight: "600",
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  emptyPlansSubtext: {
+  emptySessionsSubtext: {
     fontSize: 13,
     color: colors.textSecondary,
   },
-  plansList: {
-    gap: spacing.md,
+  sessionsList: {
+    gap: spacing.sm,
   },
-  planItem: {
+  sessionItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -370,35 +396,29 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.divider,
   },
-  planInfo: {
+  sessionInfo: {
     flex: 1,
   },
-  planName: {
+  sessionName: {
     fontSize: 15,
     fontWeight: "700",
     color: colors.text,
     marginBottom: spacing.xs,
   },
-  planDates: {
-    fontSize: 12,
+  sessionZone: {
+    fontSize: 13,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
     fontWeight: "500",
   },
-  planSessions: {
+  sessionMeta: {
     fontSize: 11,
-    color: colors.primary,
-    fontWeight: "600",
+    color: colors.textSecondary,
+    fontWeight: "500",
   },
-  planStatus: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.md,
-  },
-  planStatusText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.white,
+  editButton: {
+    padding: spacing.sm,
+    marginLeft: spacing.sm,
   },
   actionsCard: {
     gap: spacing.md,
@@ -422,5 +442,71 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: colors.primary,
+  },
+  emptyAssessments: {
+    alignItems: "center",
+    paddingVertical: spacing.lg,
+  },
+  emptyAssessmentsText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  emptyAssessmentsSubtext: {
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  assessmentsList: {
+    gap: spacing.sm,
+  },
+  assessmentItem: {
+    flexDirection: "row",
+    gap: spacing.md,
+    padding: spacing.md,
+    backgroundColor: colors.neutralBg,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
+  assessmentDate: {
+    justifyContent: "center",
+    alignItems: "center",
+    minWidth: 70,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.primary + "15",
+    borderRadius: borderRadius.md,
+  },
+  assessmentDateText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: colors.primary,
+    textAlign: "center",
+  },
+  assessmentInfo: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  assessmentRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: spacing.xs,
+  },
+  assessmentLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textSecondary,
+  },
+  assessmentValue: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  assessmentObservation: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
+    fontStyle: "italic",
   },
 })

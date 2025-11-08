@@ -2,13 +2,13 @@
 
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native"
 import { useEffect, useState } from "react"
-import { colors, spacing, borderRadius } from "../theme/colors"
-import { FeedbackIcon, CheckCircleIcon } from "../components/Icons"
+import { colors, spacing, borderRadius, shadows } from "../theme/colors"
+import { FeedbackIcon, CheckCircleIcon, SendIcon } from "../components/Icons"
 import { useFeedback } from "../contexts/FeedbackContext"
 import { useAuth } from "../contexts/AuthContext"
 
-export default function Feedbacks() {
-  const { feedbacks, loading, error, fetchFeedbacks, markAsRead, getFeedbacksByAthlete } = useFeedback()
+export default function Feedbacks({ navigation }) {
+  const { feedbacks, loading, error, fetchFeedbacks, markAsRead } = useFeedback()
   const { user } = useAuth()
   const [refreshing, setRefreshing] = useState(false)
 
@@ -22,13 +22,11 @@ export default function Feedbacks() {
     setRefreshing(false)
   }
 
-  const displayFeedbacks = user?.type === "coach" ? feedbacks : getFeedbacksByAthlete(user?.email)
+  const displayFeedbacks =
+    user?.tipo_usuario === "treinador" ? feedbacks : feedbacks.filter((f) => f.atleta_id === user?.atleta_id)
 
-  const getESRColor = (value) => {
-    if (value <= 3) return colors.danger
-    if (value <= 6) return colors.warning
-    return colors.success
-  }
+  const readFeedbacks = displayFeedbacks.filter((f) => f.lido)
+  const unreadFeedbacks = displayFeedbacks.filter((f) => !f.lido)
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -42,122 +40,263 @@ export default function Feedbacks() {
     return `${Math.floor(diffHours / 24)} dias atrás`
   }
 
+  if (loading && feedbacks.length === 0) {
+    return (
+      <View style={[styles.container, styles.centerContent]}>
+        <ActivityIndicator size="large" color={colors.primary} />
+        <Text style={styles.loadingText}>Carregando feedbacks...</Text>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Feedbacks</Text>
         <Text style={styles.subtitle}>
-          {user?.type === "coach" ? "Feedbacks dos atletas" : "Seus feedbacks enviados"}
+          {user?.tipo_usuario === "treinador" ? "Comunicação com atletas" : "Mensagens do treinador"}
         </Text>
       </View>
 
-      {loading && feedbacks.length === 0 ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={styles.loadingText}>Carregando feedbacks...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.content}
-          showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
-        >
-          {error && (
-            <View style={styles.errorContainer}>
-              <Text style={styles.errorText}>Erro ao carregar feedbacks</Text>
-              <TouchableOpacity style={styles.retryButton} onPress={fetchFeedbacks}>
-                <Text style={styles.retryButtonText}>Tentar novamente</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+      <ScrollView
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
+      >
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Erro ao carregar feedbacks</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchFeedbacks}>
+              <Text style={styles.retryButtonText}>Tentar novamente</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-          {!error && displayFeedbacks.length === 0 ? (
-            <View style={styles.emptyState}>
-              <FeedbackIcon color={colors.textTertiary} size={48} />
-              <Text style={styles.emptyText}>Nenhum feedback ainda</Text>
-              <Text style={styles.emptySubtext}>
-                {user?.type === "coach"
-                  ? "Os feedbacks dos atletas aparecerão aqui"
-                  : "Envie seu primeiro feedback para o treinador"}
-              </Text>
+        {unreadFeedbacks.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Novos ({unreadFeedbacks.length})</Text>
+              <View style={styles.unreadBadge}>
+                <Text style={styles.unreadBadgeText}>●</Text>
+              </View>
             </View>
-          ) : (
-            displayFeedbacks.map((feedback) => (
+            {unreadFeedbacks.map((feedback) => (
               <TouchableOpacity
                 key={feedback.id}
-                style={[styles.feedbackCard, !feedback.read && styles.unread]}
+                style={[styles.feedbackCard, styles.unreadCard, shadows.sm]}
                 onPress={() => markAsRead(feedback.id)}
+                activeOpacity={0.85}
               >
                 <View style={styles.feedbackHeader}>
-                  <View style={styles.feedbackIcon}>
-                    <FeedbackIcon color={colors.primary} size={20} />
+                  <View style={[styles.feedbackIcon, { backgroundColor: colors.primary + "20" }]}>
+                    <SendIcon color={colors.primary} size={18} />
                   </View>
                   <View style={styles.feedbackInfo}>
-                    {user?.type === "coach" && <Text style={styles.athleteName}>{feedback.athleteName}</Text>}
                     <Text style={styles.feedbackType}>
-                      {feedback.type === "daily"
-                        ? "Diário"
-                        : feedback.type === "pre-training"
-                          ? "Pré-treino"
-                          : "Pós-treino"}
+                      {feedback.tipo_mensagem === "elogio"
+                        ? "Elogio"
+                        : feedback.tipo_mensagem === "orientacao"
+                          ? "Orientação"
+                          : feedback.tipo_mensagem === "alerta"
+                            ? "Alerta"
+                            : "Planejamento"}
                     </Text>
                   </View>
-                  <View style={styles.feedbackMeta}>
-                    <Text style={styles.feedbackTime}>{formatDate(feedback.date)}</Text>
-                    {!feedback.read && <View style={styles.unreadDot} />}
-                  </View>
+                  <Text style={styles.feedbackTime}>{formatDate(feedback.data)}</Text>
                 </View>
 
-                <Text style={styles.feedbackMessage}>{feedback.message}</Text>
-
-                <View style={styles.feedbackFooter}>
-                  <View style={styles.esrBadge}>
-                    <View style={[styles.esrIndicator, { backgroundColor: getESRColor(feedback.esrValue) }]} />
-                    <Text style={styles.esrText}>ESR: {feedback.esrValue}/10</Text>
-                  </View>
-                  {feedback.read && <CheckCircleIcon color={colors.success} size={16} />}
-                </View>
+                <Text style={styles.feedbackMessage}>{feedback.mensagem}</Text>
               </TouchableOpacity>
-            ))
-          )}
-        </ScrollView>
-      )}
+            ))}
+          </View>
+        )}
+
+        {readFeedbacks.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Histórico</Text>
+            {readFeedbacks.map((feedback) => (
+              <TouchableOpacity
+                key={feedback.id}
+                style={[styles.feedbackCard, styles.readCard, shadows.sm]}
+                activeOpacity={0.85}
+              >
+                <View style={styles.feedbackHeader}>
+                  <View style={[styles.feedbackIcon, { backgroundColor: colors.success + "20" }]}>
+                    <CheckCircleIcon color={colors.success} size={18} />
+                  </View>
+                  <View style={styles.feedbackInfo}>
+                    <Text style={styles.feedbackType}>
+                      {feedback.tipo_mensagem === "elogio"
+                        ? "Elogio"
+                        : feedback.tipo_mensagem === "orientacao"
+                          ? "Orientação"
+                          : feedback.tipo_mensagem === "alerta"
+                            ? "Alerta"
+                            : "Planejamento"}
+                    </Text>
+                  </View>
+                  <Text style={styles.feedbackTime}>{formatDate(feedback.data)}</Text>
+                </View>
+
+                <Text style={styles.feedbackMessage}>{feedback.mensagem}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {displayFeedbacks.length === 0 && !error && (
+          <View style={styles.emptyState}>
+            <FeedbackIcon color={colors.textTertiary} size={56} />
+            <Text style={styles.emptyText}>Nenhum feedback ainda</Text>
+            <Text style={styles.emptySubtext}>
+              {user?.tipo_usuario === "treinador"
+                ? "Os feedbacks dos atletas aparecerão aqui"
+                : "Você receberá feedbacks do seu treinador aqui"}
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   container: {
+    marginTop: spacing.md,
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.neutralBg,
   },
-  header: {
-    padding: spacing.lg,
-    paddingTop: 60,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  loadingContainer: {
-    flex: 1,
+  centerContent: {
     justifyContent: "center",
     alignItems: "center",
-    padding: spacing.xl,
   },
   loadingText: {
     marginTop: spacing.md,
     fontSize: 14,
     color: colors.textSecondary,
+  },
+  header: {
+    padding: spacing.lg,
+    paddingTop: spacing.xl,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: "800",
+    color: colors.text,
+    marginBottom: spacing.xs,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  content: {
+    flex: 1,
+  },
+  section: {
+    padding: spacing.lg,
+    paddingBottom: spacing.md,
+  },
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  unreadBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.primary,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  unreadBadgeText: {
+    fontSize: 12,
+    color: colors.white,
+    fontWeight: "700",
+  },
+  feedbackCard: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  unreadCard: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    backgroundColor: colors.primary + "08",
+  },
+  readCard: {
+    opacity: 0.75,
+  },
+  feedbackHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    marginBottom: spacing.md,
+    gap: spacing.md,
+  },
+  feedbackIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  feedbackInfo: {
+    flex: 1,
+  },
+  senderName: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  feedbackType: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: "500",
+  },
+  feedbackTime: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    fontWeight: "600",
+  },
+  feedbackMessage: {
+    fontSize: 13,
+    color: colors.text,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+    fontWeight: "500",
+  },
+  feedbackFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  esrBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  esrText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: colors.white,
   },
   errorContainer: {
     padding: spacing.xl,
@@ -180,109 +319,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "600",
   },
-  content: {
-    flex: 1,
-    padding: spacing.md,
-  },
   emptyState: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: spacing.xxl * 2,
+    paddingVertical: spacing.xxl * 3,
   },
   emptyText: {
-    fontSize: 16,
-    color: colors.textSecondary,
+    fontSize: 18,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.xs,
     marginTop: spacing.md,
-    fontWeight: "600",
   },
   emptySubtext: {
-    fontSize: 14,
-    color: colors.textTertiary,
-    marginTop: spacing.xs,
+    fontSize: 13,
+    color: colors.textSecondary,
     textAlign: "center",
-  },
-  feedbackCard: {
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  unread: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primary,
-  },
-  feedbackHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  feedbackIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: spacing.sm,
-  },
-  feedbackInfo: {
-    flex: 1,
-  },
-  athleteName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: colors.text,
-    marginBottom: 2,
-  },
-  feedbackType: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: "500",
-  },
-  feedbackMeta: {
-    alignItems: "flex-end",
-  },
-  feedbackTime: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-  },
-  feedbackMessage: {
-    fontSize: 14,
-    color: colors.text,
-    lineHeight: 20,
-    marginBottom: spacing.sm,
-  },
-  feedbackFooter: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  esrBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.neutralBg,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: borderRadius.sm,
-  },
-  esrIndicator: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  esrText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.text,
+    maxWidth: 280,
   },
 })

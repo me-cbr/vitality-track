@@ -8,6 +8,19 @@ import { useAuth } from "../contexts/AuthContext"
 export default function ProfileAtleta({ navigation }) {
   const { user } = useAuth()
 
+  if (!user) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Perfil</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Erro ao carregar perfil. Faça login novamente.</Text>
+        </View>
+      </View>
+    )
+  }
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -22,26 +35,32 @@ export default function ProfileAtleta({ navigation }) {
           <View style={styles.avatar}>
             <UserIcon color={colors.primary} size={48} />
           </View>
-          <Text style={styles.name}>{user?.name || "Usuário"}</Text>
-          <Text style={styles.email}>{user?.email}</Text>
+          <Text style={styles.name}>{user?.nome || user?.name || "Usuário"}</Text>
+          <Text style={styles.email}>{user?.email || "email@example.com"}</Text>
         </View>
 
-        {user?.type === "athlete" && (
+        {(user?.type === "athlete" || user?.tipo_usuario === "atleta") && (
           <>
             <View style={styles.card}>
               <Text style={styles.cardTitle}>Dados Físicos</Text>
               <View style={styles.dataGrid}>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Peso</Text>
-                  <Text style={styles.dataValue}>{user?.weight || "--"} kg</Text>
+                  <Text style={styles.dataValue}>{user?.peso || user?.weight || "--"} kg</Text>
                 </View>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Altura</Text>
-                  <Text style={styles.dataValue}>{user?.height || "--"} m</Text>
+                  <Text style={styles.dataValue}>{user?.altura || user?.height || "--"} m</Text>
                 </View>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Idade</Text>
-                  <Text style={styles.dataValue}>{user?.age || "--"} anos</Text>
+                  <Text style={styles.dataValue}>
+                    {user?.age ||
+                      (user?.data_nascimento
+                        ? new Date().getFullYear() - new Date(user.data_nascimento).getFullYear()
+                        : "--")}{" "}
+                    anos
+                  </Text>
                 </View>
               </View>
             </View>
@@ -53,7 +72,9 @@ export default function ProfileAtleta({ navigation }) {
                   <HeartIcon color={colors.primary} size={20} />
                   <View style={styles.hrInfo}>
                     <Text style={styles.hrLabel}>FC Repouso</Text>
-                    <Text style={styles.hrValue}>{user?.restingHeartRate || "--"} bpm</Text>
+                    <Text style={styles.hrValue}>
+                      {user?.frequencia_cardiaca_repouso || user?.restingHeartRate || "--"} bpm
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.hrItem}>
@@ -68,12 +89,16 @@ export default function ProfileAtleta({ navigation }) {
           </>
         )}
 
-        {user?.type === "coach" && (
+        {(user?.type === "coach" || user?.tipo_usuario === "treinador") && (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Informações Profissionais</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>CREF</Text>
               <Text style={styles.infoValue}>{user?.cref || "--"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Especialidade</Text>
+              <Text style={styles.infoValue}>{user?.especialidade || "Não informada"}</Text>
             </View>
           </View>
         )}
@@ -115,6 +140,17 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: spacing.md,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  errorText: {
+    fontSize: 16,
+    color: colors.danger,
+    textAlign: "center",
   },
   profileCard: {
     backgroundColor: colors.surface,
