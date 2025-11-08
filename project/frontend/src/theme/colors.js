@@ -1,5 +1,6 @@
 export const colors = {
   // Primary brand colors - soft pastel teal
+  mediumSeaGreen: "#00775CFF", // cor nova
   primary: "#7DD3C0",
   primaryLight: "#A8E6D7",
   primaryDark: "#5BB5A2",
@@ -14,6 +15,7 @@ export const colors = {
   actionDark: "#FF9B85",
 
   // Status colors - pastel versions
+  aquaLight: "#82d6bb", // cor nova
   success: "#A8E6CF",
   successLight: "#C8F2E0",
   warning: "#FFE5A0",

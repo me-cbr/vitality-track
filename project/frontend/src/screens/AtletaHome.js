@@ -76,7 +76,7 @@ export default function AtletaHome({ navigation }) {
   const getESRColor = (value) => {
     if (value <= 3) return colors.danger
     if (value <= 6) return colors.warning
-    return colors.success
+    return colors.aquaLight // anteriormente era colors.success
   }
 
   const getESRLabel = (value) => {
@@ -239,7 +239,7 @@ export default function AtletaHome({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing.md,
+    // marginTop: spacing.md,
     flex: 1,
     backgroundColor: colors.neutralBg,
   },
@@ -261,7 +261,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: 35, // anteriormente era spacing.md
   },
   greeting: {
     fontSize: 28,

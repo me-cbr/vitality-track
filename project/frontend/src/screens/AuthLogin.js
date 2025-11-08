@@ -81,11 +81,11 @@ export default function AuthLogin({ navigation }) {
             />
           </View>
 
-          <View style={styles.helpContainer}>
-            <Text style={styles.helpText}>Credenciais de teste:</Text>
-            <Text style={styles.helpDetail}>Atleta: atleta@email.com / atleta</Text>
-            <Text style={styles.helpDetail}>Treinador: treinador@email.com / treinador</Text>
-          </View>
+          {/*<View style={styles.helpContainer}>*/}
+          {/*  <Text style={styles.helpText}>Credenciais de teste:</Text>*/}
+          {/*  <Text style={styles.helpDetail}>Atleta: atleta@email.com / atleta</Text>*/}
+          {/*  <Text style={styles.helpDetail}>Treinador: treinador@email.com / treinador</Text>*/}
+          {/*</View>*/}
 
           <LoadingButton title="Entrar" onPress={handleSubmit} loading={loading} style={{ marginTop: spacing.lg }} />
 

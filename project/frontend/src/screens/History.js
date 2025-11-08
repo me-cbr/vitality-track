@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 22,
     fontWeight: "700",
-    color: colors.primary,
+    color: colors.mediumSeaGreen, // anteriormente era colors.primary
   },
   zonesList: {
     gap: spacing.md,

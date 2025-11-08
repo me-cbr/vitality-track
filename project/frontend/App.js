@@ -39,7 +39,7 @@ function AthleteTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          height: 64,
+          height: 78, // anteriormente era 64
           paddingBottom: 12,
           paddingTop: 12,
           borderTopWidth: 1,
@@ -105,7 +105,7 @@ function CoachTabNavigator() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
-          height: 64,
+          height: 78, // anteriormente era 64
           paddingBottom: 12,
           paddingTop: 12,
           borderTopWidth: 1,

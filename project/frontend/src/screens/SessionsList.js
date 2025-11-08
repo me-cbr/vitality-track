@@ -144,7 +144,7 @@ export default function SessionsList({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: spacing.md,
+    // marginTop: spacing.md,
     flex: 1,
     backgroundColor: colors.neutralBg,
   },
@@ -158,8 +158,9 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   header: {
+    flexDirection: "column",
     padding: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: 60, // anteriormente era spacing.xl
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,

@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   finishButton: {
-    backgroundColor: colors.success,
+    backgroundColor: colors.aquaLight, // anteriormente era colors.success
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
