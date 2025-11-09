@@ -22,7 +22,7 @@ export const athleteService = {
         esr: athlete.ultimaESR || athlete.esr,
       }))
     } catch (error) {
-      console.error(" Error fetching athletes:", error)
+      console.error("Error fetching athletes:", error)
       throw error
     }
   },
@@ -73,7 +73,7 @@ export const athleteService = {
     try {
       return await apiClient.post("/athletes", athleteData)
     } catch (error) {
-      console.error(" Error creating athlete:", error)
+      console.error("Error creating athlete:", error)
       throw error
     }
   },
