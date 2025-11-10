@@ -408,71 +408,107 @@ Zona 1 (50-60%):
 ## 🗄️ Modelo de Dados
 
 ### Entidades Principais
-
-\`\`\`
-Usuario
+<pre style="background:None;color:#dcdcdc;padding:5px;font-size:12px;">
+User
 ├── id
-├── nome
+├── password
+├── last_login
+├── username
+├── first_name
+├── last_name
 ├── email
-├── senha
-├── tipo (atleta/treinador)
-├── data_criacao
-└── ultimo_login
+├── date_joined
+└── user_type (atleta/treinador)
 
-Atleta
+Athlete
 ├── id
-├── data_nascimento
-├── peso
-├── altura
-├── frequencia_cardiaca_repouso
-└── treinador_id (FK)
+├── birth_date
+├── weight
+├── resting_heart_rate
+├── coach_related_id (FK)
+├── created_at
+├── updated_at
+├── deleted_at
+└── user_id (FK)
 
-Treinador
+Coach
 ├── id
 ├── cref
-└── especialidade
+├── specialty
+├── created_at
+├── updated_at
+├── deleted_at
+└── user_id (FK)
 
-EscalaSubjetiva
+SubjectiveScale
 ├── id
-├── tipo (diario/pre/post)
-├── valor (0-10)
-├── data
-└── atleta_id (FK)
-
-AvaliacaoFisica
-├── id
-├── data
-├── frequencia_cardiaca
-├── observacoes
-├── zona_treinamento
+├── type (diario/pre/post)
+├── value (0-10)
+├── date
 ├── atleta_id (FK)
-└── treinador_id (FK)
+├── created_at
+├── created_by (FK)
+├── updated_at
+├── updated_by (FK)
+├── deleted_at
+└── deleted_by (FK)
 
-PlanoTreinamento
+PhysicalEvaluation
 ├── id
-├── nome
-├── descricao
-├── data_inicio
-├── data_fim
-├── atleta_id (FK)
-└── treinador_id (FK)
+├── date
+├── heart_rate
+├── observations
+├── training_zone
+├── athlete_id (FK)
+├── created_at
+├── created_by (FK)
+├── updated_at
+├── updated_by (FK)
+├── deleted_at
+└── deleted_by (FK)
 
-SessaoTreinamento
+TrainingPlan
 ├── id
-├── zona_alvo
-├── tipo
-├── intensidade
-├── duracao
-├── data
-└── plano_id (FK)
+├── name
+├── description
+├── start_date
+├── end_date
+├── athlete_id (FK)
+├── created_at
+├── created_by (FK)
+├── updated_by (FK)
+├── updated_at
+├── deleted_at
+└── deleted_by (FK)
+
+TrainingSession
+├── id
+├── target_zone
+├── training_type
+├── intensity
+├── duration
+├── date
+├── training_plan_id (FK)
+├── created_at
+├── created_by (FK)
+├── updated_at
+├── updated_by (FK)
+├── deleted_at
+└── deleted_by (FK)
 
 Feedback
 ├── id
-├── mensagem
-├── data
-├── atleta_id (FK)
-└── treinador_id (FK)
-\`\`\`
+├── message
+├── marked_as_read
+├── date
+├── athlete_id (FK)
+├── created_at
+├── created_by (FK)
+├── updated_at
+├── updated_by (FK)
+├── deleted_at
+└── deleted_by (FK)
+</pre>
 
 ---
 

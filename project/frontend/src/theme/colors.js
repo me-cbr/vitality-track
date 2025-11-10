@@ -4,6 +4,7 @@ export const colors = {
   primary: "#7DD3C0",
   primaryLight: "#A8E6D7",
   primaryDark: "#5BB5A2",
+  primaryMedium: "#68b5a2",
 
   // Secondary accent - soft lavender
   secondary: "#B8A4D9",
@@ -20,8 +21,11 @@ export const colors = {
   successLight: "#C8F2E0",
   warning: "#FFE5A0",
   warningLight: "#FFF2CC",
+  mostarda: '#FFDB58',
+  warningDark: 'rgb(252,162,26)',
   danger: "#FFB4B4",
   dangerLight: "#FFD4D4",
+  dangerDark: "#FF8A8A",
 
   // Neutral palette - soft and clean
   background: "#F8F9FC",
