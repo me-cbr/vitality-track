@@ -1,5 +1,5 @@
 services:
-  vitality-track-database:
+  vitality-check-database:
     image: postgres:17
     environment:
       POSTGRES_DB: ${DB_NAME}
@@ -12,12 +12,12 @@ services:
     env_file:
       - .env
 
-  web:
-    container_name: web_vitality_track
+  web_vitality_check:
+    container_name: web_vitality_check
     build: .
     working_dir: /app
     depends_on:
-      - vitality-track-database
+      - vitality-check-database
     ports:
       - "8000:8000"
     environment:
@@ -26,7 +26,7 @@ services:
       - DJANGO_LOG_LEVEL=INFO
       - OAUTHLIB_INSECURE_TRANSPORT=False
       - DEBUG=True
-    command: python manage.py runserver vitalitytrack.localhost:8000
+    command: python manage.py runserver vitalitycheck.localhost:8000
     volumes:
       - ./project:/app
     env_file:

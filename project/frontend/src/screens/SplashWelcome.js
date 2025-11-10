@@ -66,7 +66,7 @@ export default function SplashWelcome({ navigation }) {
             },
           ]}
         >
-          <Text style={styles.title}>VitalityTrack</Text>
+          <Text style={styles.title}>VitalityCheck</Text>
           <Text style={styles.subtitle}>Seu Companheiro em Saúde e Performance</Text>
         </Animated.View>
 

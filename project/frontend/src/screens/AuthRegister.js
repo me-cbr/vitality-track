@@ -87,7 +87,7 @@ export default function AuthRegister({ navigation }) {
         <View style={styles.content}>
           <View style={styles.logoContainer}>
             <Text style={styles.logo}>💪</Text>
-            <Text style={styles.appName}>VitalityTrack</Text>
+            <Text style={styles.appName}>VitalityCheck</Text>
           </View>
 
           <Text style={styles.title}>Criar Conta</Text>

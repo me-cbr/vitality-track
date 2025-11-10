@@ -1,5 +1,5 @@
 """
-WSGI config for vitality_track project.
+WSGI config for vitality_check project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

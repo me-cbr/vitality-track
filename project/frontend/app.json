@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "VitalityTrack",
-    "slug": "vitality-track",
+    "name": "VitalityCheck",
+    "slug": "vitality-check",
     "version": "2.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,14 +14,14 @@
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.vitalitytrack.app"
+      "bundleIdentifier": "com.vitalitycheck.app"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#06A77D"
       },
-      "package": "com.vitalitytrack.app"
+      "package": "com.vitalitycheck.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"

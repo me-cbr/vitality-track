@@ -1,5 +1,5 @@
 """
-ASGI config for vitality_track project.
+ASGI config for vitality_check project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 

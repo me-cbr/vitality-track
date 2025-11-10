@@ -12,21 +12,21 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 FROM python:3.13-slim
 
-RUN useradd -m -u 1000 -r vitality_track
+RUN useradd -m -u 1000 -r vitality_check
 WORKDIR /app
 
 COPY --from=builder /usr/local/lib/python3.13/site-packages/ /usr/local/lib/python3.13/site-packages/
 COPY --from=builder /usr/local/bin/ /usr/local/bin/
 
-COPY --chown=vitality_track:vitality_track . .
+COPY --chown=vitality_check:vitality_check . .
 
 RUN mkdir -p /app/static /app/media /app/logs && \
-    chown -R vitality_track:vitality_track /app
+    chown -R vitality_check:vitality_check /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-USER vitality_track
+USER vitality_check
 
 EXPOSE 8000
 
