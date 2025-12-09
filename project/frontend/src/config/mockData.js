@@ -1,23 +1,7 @@
-// Complete Mock Data for VitalityCheck App
-// Updated with recent dates: current date is 08/11/2025
-// Focused on demo users: atleta@email.com and treinador@email.com
+// mockData removed - frontend now uses backend APIs only
+// This file kept empty for backwards compatibility; do not add mock data here.
 
-// ============================================================================
-// DEMO USERS
-// ============================================================================
-
-export const mockCoaches = [
-  {
-    id: 2,
-    nome: "Dr. Carlos Oliveira",
-    email: "treinador@email.com",
-    cref: "012345/SP",
-    especialidade: "Treinamento de Força e Condicionamento",
-    bio: "Especialista em treinamento de alta performance com 15 anos de experiência.",
-    telefone: "(11) 98765-4321",
-    atletasAssociados: [1, 2, 3, 4],
-  },
-]
+export default {}
 
 export const mockAthletes = [
   {
@@ -232,7 +216,7 @@ export const mockTrainingPlans = [
     data_inicio: "2025-11-01",
     data_fim: "2025-11-30",
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     created_at: "2024-10-15T10:30:00Z",
     updated_at: "2025-11-05T14:00:00Z",
     status: "ativo",
@@ -246,7 +230,7 @@ export const mockTrainingPlans = [
     data_inicio: "2025-12-01",
     data_fim: "2025-12-31",
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     created_at: "2024-10-10T14:15:00Z",
     updated_at: "2025-11-05T09:30:00Z",
     status: "planejado",
@@ -266,7 +250,7 @@ export const mockTrainingSessions = [
     data: "2025-11-08T14:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "concluido",
     notas: "Atleta completou com folga. Pode aumentar peso na próxima.",
     created_at: "2025-11-05T10:00:00Z",
@@ -282,7 +266,7 @@ export const mockTrainingSessions = [
     data: "2025-11-06T09:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "concluido",
     notas: "Sessão de recuperação.",
     created_at: "2025-11-05T10:00:00Z",
@@ -298,7 +282,7 @@ export const mockTrainingSessions = [
     data: "2025-11-07T16:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "concluido",
     notas: "Foco em forma. Excelente execução.",
     created_at: "2025-11-05T10:00:00Z",
@@ -314,7 +298,7 @@ export const mockTrainingSessions = [
     data: "2025-11-04T07:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "concluido",
     notas: "ESR estava em 8, treino ideal.",
     created_at: "2025-11-01T10:00:00Z",
@@ -330,7 +314,7 @@ export const mockTrainingSessions = [
     data: "2025-11-03T06:30:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "concluido",
     notas: "Final de semana. Foco em distância.",
     created_at: "2025-11-01T10:00:00Z",
@@ -346,7 +330,7 @@ export const mockTrainingSessions = [
     data: "2025-11-02T07:00:00Z",
     plano_id: 1,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "concluido",
     notas: "Domingo - recuperação.",
     created_at: "2025-11-01T10:00:00Z",
@@ -362,7 +346,7 @@ export const mockTrainingSessions = [
     data: "2025-11-09T17:00:00Z",
     plano_id: 2,
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     status: "agendado",
     notas: "Próxima sessão - semana atual.",
     created_at: "2025-11-08T14:30:00Z",
@@ -378,7 +362,7 @@ export const mockAvaliacoesFisicas = [
       "Atleta em boa forma, pronto para aumentar carga. Respiração controlada durante avaliação. Excelente recuperação pós-esforço. Recomenda-se intensificar próximas sessões.",
     zona_treinamento: "Zona 3-4",
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     created_at: "2025-11-07T10:15:00Z",
     zonas_karvonen: {
       zona1: { min: 114, max: 133, label: "Recuperação (50-60% FCMax)" },
@@ -396,7 +380,7 @@ export const mockAvaliacoesFisicas = [
       "Excelente recuperação desde avaliação anterior. Atleta demonstra melhor condicionamento. FC mais baixa. Pronto para ciclo de força.",
     zona_treinamento: "Zona 2-3",
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     created_at: "2025-10-30T14:45:00Z",
     zonas_karvonen: {
       zona1: { min: 112, max: 131, label: "Recuperação (50-60% FCMax)" },
@@ -414,7 +398,7 @@ export const mockAvaliacoesFisicas = [
       "Primeira avaliação. Atleta com boa disposição e motivação. Recomenda-se período de adaptação de 2-3 semanas. Começar com intensidade leve.",
     zona_treinamento: "Zona 2-3",
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     created_at: "2025-10-22T09:30:00Z",
     zonas_karvonen: {
       zona1: { min: 117, max: 136, label: "Recuperação (50-60% FCMax)" },
@@ -535,7 +519,7 @@ export const mockFeedbacks = [
     message: "Não faça a sessão de HIIT hoje - sua ESR está em 4. Descanse e recupere-se bem.",
     data: "2025-11-04T18:00:00Z",
     atleta_id: 1,
-    treinador_id: 2,
+    created_by: 2,
     lido: true,
     created_at: "2025-11-04T18:05:00Z",
   },

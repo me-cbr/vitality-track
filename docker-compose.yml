@@ -26,7 +26,7 @@ services:
       - DJANGO_LOG_LEVEL=INFO
       - OAUTHLIB_INSECURE_TRANSPORT=False
       - DEBUG=True
-    command: python manage.py runserver vitalitycheck.localhost:8000
+    command: python manage.py runserver 0.0.0.0:8000
     volumes:
       - ./project:/app
     env_file:

@@ -14,6 +14,7 @@ export function AuthProvider({ children }) {
   }, [])
 
   const loadUser = async () => {
+    setLoading(true)
     try {
       const userData = await authService.getCurrentUser()
       if (userData) {
@@ -67,8 +68,22 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const refreshProfile = async () => {
+    try {
+      setLoading(true)
+      const profile = await authService.getCurrentUser()
+      if (profile) setUser(profile)
+      return profile
+    } catch (err) {
+      console.error(" Error refreshing profile:", err)
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   )

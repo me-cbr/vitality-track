@@ -15,7 +15,6 @@ export function FeedbackProvider({ children }) {
     setError(null)
     try {
       const data = await feedbackService.getFeedbacks()
-      // Normalize field names from API to frontend
       const normalized = data.map((f) => ({
         id: f.id,
         mensagem: f.mensagem || f.message,

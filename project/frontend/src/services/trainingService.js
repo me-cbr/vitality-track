@@ -1,46 +1,19 @@
-import { apiClient, USE_MOCK_DATA } from "../config/api"
-import { mockTrainingPlans, mockAvaliacoesFisicas, mockTrainingSessions } from "../config/mockData"
+import { apiClient } from "../config/api"
 
 export const trainingService = {
   async getSessions(atletaId) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      return mockTrainingSessions
-        .filter((s) => s.atleta_id === atletaId)
-        .map((session) => ({
-          ...session,
-          title: session.nome || session.title,
-          timeLabel: session.hora || session.timeLabel || this.getDayLabel(session.data),
-          dayLabel: this.getDayLabel(session.data),
-          zone: this.extractZoneNumber(session.zona_alvo),
-        }))
-    }
-
     try {
-      const sessions = await apiClient.get(`/sessoes-treinamento?atleta_id=${atletaId}`)
-      return sessions.map((session) => ({
-        ...session,
-        title: session.nome || session.title,
-        timeLabel: session.hora || session.timeLabel,
-        dayLabel: this.getDayLabel(session.data),
-        zone: this.extractZoneNumber(session.zona_alvo),
-      }))
+      const sessions = await apiClient.get(`/training-sessions/?athlete_id=${atletaId}`)
+      return sessions
     } catch (error) {
       console.error("Error fetching sessions:", error)
       throw error
     }
   },
 
-  // Plans are internal coach organization, athletes see individual sessions
-
   async getTrainingPlanById(planId) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      return mockTrainingPlans.find((p) => p.id === planId)
-    }
-
     try {
-      return await apiClient.get(`/planos-treinamento/${planId}`)
+      return await apiClient.get(`/training-plans/${planId}/`)
     } catch (error) {
       console.error("Error fetching training plan:", error)
       throw error
@@ -48,17 +21,6 @@ export const trainingService = {
   },
 
   async createTrainingPlan(planData) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const newPlan = {
-        id: mockTrainingPlans.length + 1,
-        ...planData,
-        sessoes: [],
-      }
-      mockTrainingPlans.push(newPlan)
-      return newPlan
-    }
-
     try {
       const payload = {
         nome: planData.nome,
@@ -68,7 +30,7 @@ export const trainingService = {
         atleta_id: planData.atleta_id,
         treinador_id: planData.treinador_id,
       }
-      return await apiClient.post("/planos-treinamento", payload)
+      return await apiClient.post("/training-plans/", payload)
     } catch (error) {
       console.error("Error creating training plan:", error)
       throw error
@@ -76,16 +38,6 @@ export const trainingService = {
   },
 
   async updateTrainingPlan(planId, planData) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const index = mockTrainingPlans.findIndex((p) => p.id === planId)
-      if (index > -1) {
-        mockTrainingPlans[index] = { ...mockTrainingPlans[index], ...planData }
-        return mockTrainingPlans[index]
-      }
-      throw new Error("Training plan not found")
-    }
-
     try {
       const payload = {
         nome: planData.nome,
@@ -93,7 +45,7 @@ export const trainingService = {
         data_inicio: planData.data_inicio,
         data_fim: planData.data_fim,
       }
-      return await apiClient.put(`/planos-treinamento/${planId}`, payload)
+      return await apiClient.put(`/training-plans/${planId}/`, payload)
     } catch (error) {
       console.error("Error updating training plan:", error)
       throw error
@@ -101,28 +53,9 @@ export const trainingService = {
   },
 
   async getSessionById(sessionId) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const session = mockTrainingSessions.find((s) => s.id === sessionId)
-      if (session) {
-        return {
-          ...session,
-          title: session.nome || session.title,
-          timeLabel: session.hora || session.timeLabel,
-          zone: this.extractZoneNumber(session.zona_alvo),
-        }
-      }
-      return null
-    }
-
     try {
-      const session = await apiClient.get(`/sessoes-treinamento/${sessionId}`)
-      return {
-        ...session,
-        title: session.nome || session.title,
-        timeLabel: session.hora || session.timeLabel,
-        zone: this.extractZoneNumber(session.zona_alvo),
-      }
+      const session = await apiClient.get(`/training-sessions/${sessionId}/`)
+      return session
     } catch (error) {
       console.error("Error fetching session:", error)
       throw error
@@ -130,18 +63,6 @@ export const trainingService = {
   },
 
   async createSession(sessionData) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const newSession = {
-        id: Math.max(...mockTrainingSessions.map((s) => s.id || 0), 0) + 1,
-        ...sessionData,
-        status: "agendado",
-        created_at: new Date().toISOString(),
-      }
-      mockTrainingSessions.push(newSession)
-      return newSession
-    }
-
     try {
       const payload = {
         zona_alvo: sessionData.zona_alvo,
@@ -151,7 +72,7 @@ export const trainingService = {
         data: `${sessionData.data}T${sessionData.hora}:00`,
         plano_id: sessionData.plano_id,
       }
-      return await apiClient.post("/sessoes-treinamento", payload)
+      return await apiClient.post("/training-sessions/", payload)
     } catch (error) {
       console.error("Error creating session:", error)
       throw error
@@ -159,16 +80,6 @@ export const trainingService = {
   },
 
   async updateSession(sessionId, sessionData) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const index = mockTrainingSessions.findIndex((s) => s.id === sessionId)
-      if (index > -1) {
-        mockTrainingSessions[index] = { ...mockTrainingSessions[index], ...sessionData }
-        return mockTrainingSessions[index]
-      }
-      throw new Error("Session not found")
-    }
-
     try {
       const payload = {
         zona_alvo: sessionData.zona_alvo,
@@ -177,7 +88,7 @@ export const trainingService = {
         duracao: sessionData.duracao,
         data: `${sessionData.data}T${sessionData.hora}:00`,
       }
-      return await apiClient.put(`/sessoes-treinamento/${sessionId}`, payload)
+      return await apiClient.put(`/training-sessions/${sessionId}/`, payload)
     } catch (error) {
       console.error("Error updating session:", error)
       throw error
@@ -185,18 +96,8 @@ export const trainingService = {
   },
 
   async completeSession(sessionId) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const session = mockTrainingSessions.find((s) => s.id === sessionId)
-      if (session) {
-        session.status = "concluido"
-        return session
-      }
-      throw new Error("Session not found")
-    }
-
     try {
-      return await apiClient.patch(`/sessoes-treinamento/${sessionId}/concluir`, {})
+      return await apiClient.patch(`/training-sessions/${sessionId}/conclude/`, {})
     } catch (error) {
       console.error("Error completing session:", error)
       throw error
@@ -204,16 +105,8 @@ export const trainingService = {
   },
 
   async getAssessments(atletaId) {
-    if (USE_MOCK_DATA) {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      const assessments = mockAvaliacoesFisicas.filter((a) => a.atleta_id === atletaId)
-      console.log("Assessments retrieved for athlete", atletaId, ":", assessments)
-      return assessments
-    }
-
     try {
-      console.log("Fetching assessments from API for athlete:", atletaId)
-      const assessments = await apiClient.get(`/avaliacoes-fisicas?atleta_id=${atletaId}`)
+      const assessments = await apiClient.get(`/physical-evaluations/?athlete_id=${atletaId}`)
       return assessments
     } catch (error) {
       console.error("Error fetching assessments:", error)

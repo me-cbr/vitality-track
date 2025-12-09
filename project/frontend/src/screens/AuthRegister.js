@@ -23,18 +23,55 @@ export default function AuthRegister({ navigation }) {
     email: "",
     password: "",
     confirmPassword: "",
-    // Athlete specific
     birthDate: "",
     weight: "",
     height: "",
     restingHR: "",
-    // Coach specific
     cref: "",
     specialty: "",
   })
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState({ visible: false, message: "", type: "success" })
   const { register } = useAuth()
+
+  const handleBirthDateChange = (text) => {
+    let digits = text.replace(/\D/g, "")
+    if (digits.length > 8) digits = digits.slice(0, 8)
+
+    let formatted = digits
+    if (digits.length > 4) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`
+    } else if (digits.length > 2) {
+      formatted = `${digits.slice(0, 2)}/${digits.slice(2)}`
+    }
+
+    setFormData({ ...formData, birthDate: formatted })
+  }
+
+  const handleCrefChange = (text) => {
+    // Accept only alphanumeric and uppercase letters, build format: 000000-G/XX
+    const alnum = text.replace(/[^0-9A-Za-z]/g, "").toUpperCase()
+
+    // first 6 chars must be digits
+    const digits = (alnum.match(/^\d*/) || [""])[0].slice(0, 6)
+    const rest = alnum.slice(digits.length)
+
+    const part1 = digits
+    const part2 = rest.slice(0, 1) // single char after dash
+    const part3 = rest.slice(1, 3) // up to two chars after slash
+
+    let formatted = part1
+
+    if (part1.length === 6) formatted += "-"
+
+    if (part2) formatted += part2
+
+    if (part2 && part3) formatted += "/"
+
+    if (part3) formatted += part3
+
+    setFormData({ ...formData, cref: formatted })
+  }
 
   const handleSubmit = async () => {
     // Validation
@@ -55,23 +92,50 @@ export default function AuthRegister({ navigation }) {
 
     setLoading(true)
 
-    // Simulate API delay
-    setTimeout(async () => {
-      const result = await register({
-        ...formData,
-        type: userType,
-      })
-      setLoading(false)
+    const payload = {}
+    payload.user = {
+      username: formData.email,
+      email: formData.email,
+      password: formData.password,
+      first_name: formData.name,
+      user_type: userType,
+    }
 
-      if (result.success) {
+    if (userType === "athlete") {
+      let birth_date = formData.birthDate || null
+      if (birth_date && birth_date.includes("/")) {
+        const parts = birth_date.split("/")
+        if (parts.length === 3) birth_date = `${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`
+      }
+
+      payload.birth_date = birth_date
+      payload.weight = formData.weight ? parseFloat(formData.weight) : null
+      payload.height = formData.height ? parseFloat(formData.height) : null
+      payload.resting_heart_rate = formData.restingHR ? parseInt(formData.restingHR, 10) : null
+    }
+
+    if (userType === "coach") {
+      payload.cref = formData.cref
+      payload.specialty = formData.specialty
+    }
+
+    payload.type = userType
+
+    setTimeout(async () => {
+      try {
+        const result = await register(payload)
+        setLoading(false)
+
         setToast({ visible: true, message: "Cadastro realizado com sucesso!", type: "success" })
         setTimeout(() => {
           navigation.replace("Auth")
-        }, 1500)
-      } else {
-        setToast({ visible: true, message: result.error, type: "error" })
+        }, 1200)
+      } catch (err) {
+        setLoading(false)
+        const message = err?.message || "Erro ao cadastrar. Verifique os dados."
+        setToast({ visible: true, message, type: "error" })
       }
-    }, 1000)
+    }, 800)
   }
 
   if (!userType) {
@@ -202,10 +266,12 @@ export default function AuthRegister({ navigation }) {
                 <Text style={styles.label}>Data de Nascimento</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="DD/MM/AAAA"
-                  value={formData.birthDate}
-                  onChangeText={(text) => setFormData({ ...formData, birthDate: text })}
-                  placeholderTextColor={colors.textTertiary}
+                    placeholder="DD/MM/AAAA"
+                    value={formData.birthDate}
+                    onChangeText={handleBirthDateChange}
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="numeric"
+                    maxLength={10}
                 />
               </View>
 
@@ -260,8 +326,9 @@ export default function AuthRegister({ navigation }) {
                   style={styles.input}
                   placeholder="000000-G/XX"
                   value={formData.cref}
-                  onChangeText={(text) => setFormData({ ...formData, cref: text })}
+                  onChangeText={handleCrefChange}
                   placeholderTextColor={colors.textTertiary}
+                  maxLength={11}
                 />
               </View>
 

@@ -35,7 +35,7 @@ export default function ProfileAtleta({ navigation }) {
           <View style={styles.avatar}>
             <UserIcon color={colors.primary} size={48} />
           </View>
-          <Text style={styles.name}>{user?.nome || user?.name || "Usuário"}</Text>
+          <Text style={styles.name}>{user?.first_name || user?.first_name || "Usuário"}</Text>
           <Text style={styles.email}>{user?.email || "email@example.com"}</Text>
         </View>
 

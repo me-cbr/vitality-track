@@ -1,0 +1,219 @@
+{
+  "info": {
+    "_postman_id": "vitality-track-collection",
+    "name": "Vitality Track API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Obtain JWT (login)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"user@example.com\",\n  \"password\": \"secret\"\n}"
+            },
+            "url": "{{base_url}}/auth/jwt/"
+          }
+        },
+        {
+          "name": "Refresh JWT",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+            },
+            "url": "{{base_url}}/auth/jwt/refresh/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "url": "{{base_url}}/users/me/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Registration",
+      "item": [
+        {
+          "name": "Register Athlete",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"username\": \"athlete1@example.com\",\n    \"email\": \"athlete1@example.com\",\n    \"password\": \"secret\",\n    \"first_name\": \"Athlete\",\n    \"user_type\": \"athlete\"\n  },\n  \"birth_date\": \"1990-01-01\",\n  \"weight\": 70,\n  \"height\": 175,\n  \"resting_heart_rate\": 60\n}"
+            },
+            "url": "{{base_url}}/athletes/"
+          }
+        },
+        {
+          "name": "Register Coach",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"username\": \"coach1@example.com\",\n    \"email\": \"coach1@example.com\",\n    \"password\": \"secret\",\n    \"first_name\": \"Coach\",\n    \"user_type\": \"coach\"\n  },\n  \"cref\": \"000000-G/XX\",\n  \"specialty\": \"Running\"\n}"
+            },
+            "url": "{{base_url}}/coaches/"
+          }
+        },
+        {
+          "name": "Register (unified)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"username\": \"newuser@example.com\",\n    \"email\": \"newuser@example.com\",\n    \"password\": \"secret\",\n    \"first_name\": \"New\",\n    \"user_type\": \"athlete\"\n  },\n  \"birth_date\": \"1995-05-05\",\n  \"weight\": 70,\n  \"height\": 175\n}"
+            },
+            "url": "{{base_url}}/register/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Training Plans",
+      "item": [
+        {
+          "name": "Create Training Plan",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Base Phase\",\n  \"description\": \"Foundation plan\",\n  \"start_date\": \"2025-12-01\",\n  \"end_date\": \"2026-01-31\",\n  \"athlete\": 1\n}"
+            },
+            "url": "{{base_url}}/training-plans/"
+          }
+        },
+        {
+          "name": "Get Training Plan",
+          "request": { "method": "GET", "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }], "url": "{{base_url}}/training-plans/{{plan_id}}/" }
+        }
+      ]
+    },
+    {
+      "name": "Training Sessions",
+      "item": [
+        {
+          "name": "Create Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_zone\": \"Z2\",\n  \"training_type\": \"Endurance\",\n  \"intensity\": \"moderate\",\n  \"duration\": 45,\n  \"date\": \"2025-12-02T09:00:00Z\",\n  \"training_plan\": 1\n}"
+            },
+            "url": "{{base_url}}/training-sessions/"
+          }
+        },
+        {
+          "name": "Conclude Session",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{access_token}}" }],
+            "url": "{{base_url}}/training-sessions/{{session_id}}/conclude/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Subjective Scales (ESR)",
+      "item": [
+        {
+          "name": "Create ESR",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"scale_type\": \"recuperation\",\n  \"value\": 6,\n  \"date\": \"2025-12-01T10:00:00Z\",\n  \"athlete\": 1\n}" },
+            "url": "{{base_url}}/subjective-scales/"
+          }
+        },
+        {
+          "name": "Latest ESR",
+          "request": { "method": "GET", "url": "{{base_url}}/subjective-scales/latest/?athlete_id=1" }
+        },
+        {
+          "name": "ESR History",
+          "request": { "method": "GET", "url": "{{base_url}}/subjective-scales/history/?athlete_id=1&start_date=2025-11-01&end_date=2025-12-01" }
+        }
+      ]
+    },
+    {
+      "name": "Physical Evaluations",
+      "item": [
+        {
+          "name": "Create Evaluation",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"heart_rate\": 65,\n  \"observations\": \"Felt good\",\n  \"training_zone\": \"Z2\",\n  \"athlete\": 1\n}" },
+            "url": "{{base_url}}/physical-evaluations/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Feedback",
+      "item": [
+        {
+          "name": "Create Feedback",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{access_token}}" }
+            ],
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"Great session today!\",\n  \"athlete\": 1\n}" },
+            "url": "{{base_url}}/feedbacks/"
+          }
+        },
+        {
+          "name": "List Feedbacks by Athlete",
+          "request": { "method": "GET", "url": "{{base_url}}/feedbacks/?athlete_id=1" }
+        }
+      ]
+    }
+  ]
+}

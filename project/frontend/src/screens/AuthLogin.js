@@ -21,20 +21,22 @@ export default function AuthLogin({ navigation }) {
     }
 
     setLoading(true)
-
-    // Simulate API delay
-    setTimeout(async () => {
+    try {
       const result = await login(email, password)
-      setLoading(false)
-
       if (result.success) {
-        // Navigate based on user type
-        const destination = result.user.type === "athlete" ? "AthleteMain" : "CoachMain"
+        // Navigate based on user_type from profile. App main stacks are
+        // registered as 'AthleteMain' and 'CoachMain' in App.js.
+        const user = result.user || {}
+        const destination = user.user_type === "athlete" ? "AthleteMain" : "CoachMain"
         navigation.replace(destination)
       } else {
-        setToast({ visible: true, message: result.error, type: "error" })
+        setToast({ visible: true, message: result.error || "Erro ao autenticar", type: "error" })
       }
-    }, 1000)
+    } catch (err) {
+      setToast({ visible: true, message: err.message || "Erro de rede", type: "error" })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

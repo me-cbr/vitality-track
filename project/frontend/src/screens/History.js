@@ -5,7 +5,9 @@ import { useState, useEffect } from "react"
 import { colors, spacing, borderRadius } from "../theme/colors"
 import { TrendingUpIcon, HeartIcon, ZoneIcon } from "../components/Icons"
 import { useAuth } from "../contexts/AuthContext"
-import { mockESRRecords, mockTrainingSessions, mockAthleteStats, mockAvaliacoesFisicas } from "../config/mockData"
+import { esrService } from "../services/esrService"
+import { trainingService } from "../services/trainingService"
+import { athleteService } from "../services/athleteService"
 import { getZoneColorByNumber, getZoneNameByNumber } from "../utils/zoneUtils"
 
 export default function History() {
@@ -24,24 +26,26 @@ export default function History() {
   const loadHistoricalData = async () => {
     try {
       setLoading(true)
-
       const athleteId = user?.atleta_id || user?.athleteId || user?.id
 
-      const athleteESR = mockESRRecords.filter((record) => record.atleta_id === athleteId)
-      const filteredESR = filterByPeriod(athleteESR, selectedPeriod)
+      // ESR records
+      const esrRecords = await esrService.getESRRecords(athleteId).catch(() => [])
+      const filteredESR = filterByPeriod(esrRecords, selectedPeriod)
       setEsrData(filteredESR.sort((a, b) => new Date(a.data) - new Date(b.data)))
 
-      const athleteSessions = mockTrainingSessions.filter((session) => session.atleta_id === athleteId)
-      const completedSessions = athleteSessions.filter((s) => s.status === "concluido")
+      // Sessions
+      const sessions = await trainingService.getSessions(athleteId).catch(() => [])
+      const completedSessions = sessions.filter((s) => s.status === "concluido")
       const sorted = completedSessions.sort((a, b) => new Date(b.data) - new Date(a.data))
       setSessionsData(sorted.slice(0, 10))
 
-      const stats = mockAthleteStats[athleteId]
+      // Stats (from athlete service)
+      const stats = await athleteService.getAthleteStats(athleteId).catch(() => null)
       setStatsData(stats)
 
-      const latestAssessment = mockAvaliacoesFisicas
-        .filter((a) => a.atleta_id === athleteId)
-        .sort((a, b) => new Date(b.data) - new Date(a.data))[0]
+      // Assessments
+      const assessments = await trainingService.getAssessments(athleteId).catch(() => [])
+      const latestAssessment = assessments.sort((a, b) => new Date(b.data) - new Date(a.data))[0]
       setAssessmentData(latestAssessment)
     } catch (error) {
       console.error("Error loading history data:", error)

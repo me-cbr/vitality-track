@@ -15,6 +15,7 @@ import { colors, spacing, borderRadius, shadows } from "../theme/colors"
 import { athleteService } from "../services/athleteService"
 import { useAuth } from "../contexts/AuthContext"
 import AddAthleteModal from "./AddAthleteModal"
+import { feedbackService } from "../services/feedbackService"
 
 export default function TreinadorDashboard({ navigation }) {
   const { user } = useAuth()
@@ -23,6 +24,7 @@ export default function TreinadorDashboard({ navigation }) {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [recentFeedbacks, setRecentFeedbacks] = useState([])
   const fadeAnim = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
@@ -68,6 +70,20 @@ export default function TreinadorDashboard({ navigation }) {
 
       setAthletes(athletesData)
 
+      try {
+        const athleteIds = athletesData.map((a) => a.id)
+        let allFeedbacks = []
+        for (const id of athleteIds) {
+          const f = await feedbackService.getFeedbacksByAthlete(id).catch(() => [])
+          allFeedbacks = allFeedbacks.concat(f)
+        }
+        const sorted = allFeedbacks.sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 3)
+        setRecentFeedbacks(sorted)
+      } catch (err) {
+        console.warn("Could not load recent feedbacks:", err)
+        setRecentFeedbacks([])
+      }
+
       const totalAthletes = athletesData?.length || 0
       const activeAthletes = athletesData?.filter((a) => a?.status === "ativo")?.length || 0
       const alertAthletes = athletesData?.filter((a) => a?.ultimaESR && a.ultimaESR <= 4)?.length || 0
@@ -103,9 +119,21 @@ export default function TreinadorDashboard({ navigation }) {
   }
 
   const getESRColor = (value) => {
-    if (value <= 3) return colors.danger
-    if (value <= 6) return colors.warning
-    return colors.success
+    if (value <= 3) return colors.dangerDark
+    if (value <= 6) return colors.mostarda
+    return colors.primaryMedium
+  }
+
+  const getAthleteDisplayName = (athlete) => {
+    if (athlete.profile_image) {
+      return athlete.profile_image
+    }
+    return athlete.name
+      ? athlete.nome
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+      : "??"
   }
 
   if (loading) {
@@ -189,6 +217,54 @@ export default function TreinadorDashboard({ navigation }) {
           </Animated.View>
         )}
 
+        {recentFeedbacks.length > 0 && (
+          <View style={[styles.feedbackSection, shadows.sm]}>
+            <Text style={styles.sectionTitle}>Feedback Recente</Text>
+            <View style={styles.feedbacksList}>
+              {recentFeedbacks.map((feedback) => {
+                const athlete = athletes.find((a) => a.id === feedback.atleta_id)
+                return (
+                  <View key={feedback.id} style={styles.feedbackItem}>
+                    <View style={styles.feedbackHeader}>
+                      <View style={styles.feedbackAthleteInfo}>
+                        <View
+                          style={[
+                            styles.feedbackAvatar,
+                            {
+                              backgroundColor:
+                                feedback.tipo_mensagem === "alerta"
+                                  ? colors.danger
+                                  : feedback.tipo_mensagem === "elogio"
+                                    ? colors.success
+                                    : colors.primary,
+                            },
+                          ]}
+                        >
+                          <Text style={styles.feedbackAvatarText}>
+                            {feedback.tipo_mensagem === "alerta"
+                              ? "⚠️"
+                              : feedback.tipo_mensagem === "elogio"
+                                ? "⭐"
+                                : "📝"}
+                          </Text>
+                        </View>
+                        <View style={styles.feedbackMeta}>
+                          <Text style={styles.feedbackAthleteName}>{athlete?.nome || "Atleta"}</Text>
+                          <Text style={styles.feedbackDate}>{new Date(feedback.data).toLocaleDateString("pt-BR")}</Text>
+                        </View>
+                      </View>
+                      {!feedback.lido && <View style={styles.unreadDot} />}
+                    </View>
+                    <Text style={styles.feedbackMessage} numberOfLines={2}>
+                      {feedback.mensagem}
+                    </Text>
+                  </View>
+                )
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Athletes List */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -207,41 +283,56 @@ export default function TreinadorDashboard({ navigation }) {
               <Text style={styles.emptySubtext}>Adicione atletas para começar</Text>
             </View>
           ) : (
-            athletes.map((athlete) => (
-              <TouchableOpacity
-                key={athlete.id}
-                style={[styles.athleteCard, shadows.sm]}
-                onPress={() => navigation.navigate("AthleteDetail", { athleteId: athlete.id })}
-                activeOpacity={0.85}
-              >
-                <View style={styles.athleteHeader}>
-                  <View style={styles.athleteAvatar}>
-                    <Text style={styles.athleteInitials}>
-                      {athlete.nome
-                        ? athlete.nome
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                        : "??"}
-                    </Text>
-                  </View>
-                  <View style={styles.athleteInfo}>
-                    <Text style={styles.athleteName}>{athlete.nome || "Atleta"}</Text>
-                    <View style={styles.athleteMetrics}>
-                      <Text style={styles.athleteMetric}>{calculateAge(athlete.data_nascimento)} anos</Text>
-                      <View style={styles.metricDot} />
-                      <Text style={styles.athleteMetric}>❤️ {athlete.frequencia_cardiaca_repouso} bpm</Text>
+            athletes.map((athlete) => {
+              return (
+                <TouchableOpacity
+                  key={athlete.id}
+                  style={[styles.athleteCard, shadows.sm]}
+                  onPress={() => navigation.navigate("AthleteDetail", { athleteId: athlete.id })}
+                  activeOpacity={0.85}
+                >
+                  <View style={styles.athleteCardContent}>
+                    <View style={styles.athleteHeader}>
+                      <View style={styles.athleteAvatar}>
+                        <Text style={styles.athleteInitials}>{getAthleteDisplayName(athlete)}</Text>
+                      </View>
+                      <View style={styles.athleteInfo}>
+                        <Text style={styles.athleteName}>{athlete.nome || "Atleta"}</Text>
+                        <View style={styles.athleteMetrics}>
+                          <Text style={styles.athleteMetric}>{calculateAge(athlete.data_nascimento)} anos</Text>
+                          <View style={styles.metricDot} />
+                          <Text style={styles.athleteMetric}>❤️ {athlete.frequencia_cardiaca_repouso} bpm</Text>
+                        </View>
+                      </View>
+                    </View>
+
+                    <View style={styles.athleteMetricsRow}>
+                      <View style={styles.metricBox}>
+                        <Text style={styles.metricLabel}>Adesão</Text>
+                        <Text style={styles.metricValue}>{athlete.adherence}%</Text>
+                      </View>
+                      <View style={styles.metricBox}>
+                        <Text style={styles.metricLabel}>Treinos</Text>
+                        <Text style={styles.metricValue}>{athlete.treinos_semana || 0}</Text>
+                      </View>
+                      <View style={styles.metricBox}>
+                        <Text style={styles.metricLabel}>Carga</Text>
+                        <Text style={styles.metricValue}>{athlete.carga_treino || 0}</Text>
+                      </View>
                     </View>
                   </View>
-                </View>
-                {athlete.ultimaESR && (
-                  <View style={[styles.esrBadge, { backgroundColor: getESRColor(athlete.ultimaESR) }]}>
-                    <Text style={styles.esrLabel}>ESR</Text>
-                    <Text style={styles.esrValue}>{athlete.ultimaESR}</Text>
+
+                  <View style={styles.athleteRight}>
+                    {athlete.ultimaESR && (
+                      <View style={[styles.esrBadge, { backgroundColor: getESRColor(athlete.ultimaESR) }]}>
+                        <Text style={styles.esrLabel}>ESR</Text>
+                        <Text style={styles.esrValue}>{athlete.ultimaESR}</Text>
+                      </View>
+                    )}
                   </View>
-                )}
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              )
+            })
           )}
         </View>
 
@@ -296,7 +387,7 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.lg,
-    paddingTop: spacing.md,
+    paddingTop: 35,
   },
   greeting: {
     fontSize: 28,
@@ -346,7 +437,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   alertCard: {
-    backgroundColor: colors.warning,
+    backgroundColor: colors.warningDark,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     flexDirection: "row",
@@ -396,6 +487,68 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: "700",
   },
+  feedbackSection: {
+    backgroundColor: colors.white,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.lg,
+  },
+  feedbacksList: {
+    gap: spacing.md,
+  },
+  feedbackItem: {
+    borderLeftWidth: 3,
+    borderLeftColor: colors.primary,
+    paddingLeft: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  feedbackHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  feedbackAthleteInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    flex: 1,
+  },
+  feedbackAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: borderRadius.md,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  feedbackAvatarText: {
+    fontSize: 14,
+  },
+  feedbackMeta: {
+    flex: 1,
+  },
+  feedbackAthleteName: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  feedbackDate: {
+    fontSize: 11,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  feedbackMessage: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    fontWeight: "500",
+    lineHeight: 18,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.primary,
+  },
   section: {
     marginBottom: spacing.lg,
   },
@@ -410,6 +563,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: colors.text,
     letterSpacing: -0.3,
+    marginBottom: 5,
   },
   badge: {
     paddingHorizontal: spacing.md,
@@ -426,22 +580,22 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     marginBottom: spacing.sm,
   },
+  athleteCardContent: {
+    marginBottom: spacing.md,
+  },
   athleteHeader: {
-    flex: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: spacing.md,
+    marginBottom: spacing.md,
   },
   athleteAvatar: {
     width: 48,
     height: 48,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.aquaLight,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -475,6 +629,36 @@ const styles = StyleSheet.create({
     borderRadius: 1.5,
     backgroundColor: colors.divider,
   },
+  athleteMetricsRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  metricBox: {
+    flex: 1,
+    backgroundColor: colors.neutralBg,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    alignItems: "center",
+  },
+  metricLabel: {
+    fontSize: 10,
+    color: colors.textSecondary,
+    fontWeight: "600",
+    marginBottom: 2,
+  },
+  metricValue: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: colors.text,
+  },
+  athleteRight: {
+    flexDirection: "column",
+    gap: spacing.sm,
+    alignItems: "flex-end",
+    justifyContent: "center",
+  },
   esrBadge: {
     width: 52,
     height: 52,
@@ -493,6 +677,15 @@ const styles = StyleSheet.create({
     color: colors.white,
     marginTop: 1,
   },
+  statusBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
   actionGrid: {
     flexDirection: "row",
     gap: spacing.md,
@@ -501,9 +694,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.white,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    padding: 32,
     alignItems: "center",
     justifyContent: "center",
+    marginTop: 10,
   },
   actionIcon: {
     width: 52,

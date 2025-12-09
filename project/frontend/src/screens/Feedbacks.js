@@ -23,7 +23,7 @@ export default function Feedbacks({ navigation }) {
   }
 
   const displayFeedbacks =
-    user?.tipo_usuario === "treinador" ? feedbacks : feedbacks.filter((f) => f.atleta_id === user?.atleta_id)
+    user?.user_type === "coach" ? feedbacks : feedbacks.filter((f) => f.atleta_id === user?.atleta_id)
 
   const readFeedbacks = displayFeedbacks.filter((f) => f.lido)
   const unreadFeedbacks = displayFeedbacks.filter((f) => !f.lido)
@@ -54,7 +54,7 @@ export default function Feedbacks({ navigation }) {
       <View style={styles.header}>
         <Text style={styles.title}>Feedbacks</Text>
         <Text style={styles.subtitle}>
-          {user?.tipo_usuario === "treinador" ? "Comunicação com atletas" : "Mensagens do treinador"}
+          {user?.user_type === "coach" ? "Comunicação com atletas" : "Mensagens do treinador"}
         </Text>
       </View>
 
