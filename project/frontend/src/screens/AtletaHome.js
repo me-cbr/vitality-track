@@ -17,6 +17,7 @@ import { trainingService } from "../services/trainingService"
 import { athleteService } from "../services/athleteService"
 import { useAuth } from "../contexts/AuthContext"
 import { ClockIcon, ActivityIcon, ArrowRightIcon } from "../components/Icons"
+import { USE_MOCKS, mockData } from "../config/mockData"
 
 export default function AtletaHome({ navigation }) {
   const { user } = useAuth()
@@ -47,19 +48,39 @@ export default function AtletaHome({ navigation }) {
     try {
       setLoading(true)
       const athleteId = user.atleta_id || user.athleteId || user.id
-      const [esrData, sessionsData, statsData, assessmentsData] = await Promise.all([
-        esrService.getLatestESR(athleteId).catch(() => null),
-        trainingService.getSessions(athleteId).catch(() => []),
-        athleteService.getAthleteStats(athleteId).catch(() => null),
-        trainingService.getAssessments(athleteId).catch(() => []),
-      ])
+      
+      if (USE_MOCKS) {
+        // Use mock data
+        const esrData = mockData.subjectiveScales.filter(s => s.athlete_id === athleteId).sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0] || null
+        const sessionsData = mockData.trainingSessions.filter(s => s.athlete_id === athleteId)
+        const statsData = {
+          total_sessions: sessionsData.length,
+          total_minutes: sessionsData.reduce((acc, s) => acc + (s.duration || 0), 0)
+        }
+        const assessmentsData = mockData.assessments.filter(a => a.athlete_id === athleteId)
+        
+        setLastESR(esrData)
+        const upcoming = sessionsData.filter((s) => s.status !== "concluido")
+        setNextSession(upcoming[0] || null)
+        setStats(statsData)
+        const assessmentsSorted = (assessmentsData || []).sort((a, b) => new Date(b.data) - new Date(a.data))
+        setRecentAssessments(assessmentsSorted.slice(0, 3))
+      } else {
+        // Use real API
+        const [esrData, sessionsData, statsData, assessmentsData] = await Promise.all([
+          esrService.getLatestESR(athleteId).catch(() => null),
+          trainingService.getSessions(athleteId).catch(() => []),
+          athleteService.getAthleteStats(athleteId).catch(() => null),
+          trainingService.getAssessments(athleteId).catch(() => []),
+        ])
 
-      setLastESR(esrData)
-      const upcoming = sessionsData.filter((s) => s.status !== "concluido")
-      setNextSession(upcoming[0] || null)
-      setStats(statsData)
-      const assessmentsSorted = (assessmentsData || []).sort((a, b) => new Date(b.data) - new Date(a.data))
-      setRecentAssessments(assessmentsSorted.slice(0, 3))
+        setLastESR(esrData)
+        const upcoming = sessionsData.filter((s) => s.status !== "concluido")
+        setNextSession(upcoming[0] || null)
+        setStats(statsData)
+        const assessmentsSorted = (assessmentsData || []).sort((a, b) => new Date(b.data) - new Date(a.data))
+        setRecentAssessments(assessmentsSorted.slice(0, 3))
+      }
     } catch (error) {
       console.error("Error loading athlete data:", error)
     } finally {
@@ -123,15 +144,15 @@ export default function AtletaHome({ navigation }) {
             <View style={styles.nextSessionBadge}>
               <Text style={styles.nextSessionBadgeText}>PRÓXIMO TREINO</Text>
             </View>
-            <Text style={styles.nextSessionTitle}>{nextSession.nome || nextSession.title}</Text>
+            <Text style={styles.nextSessionTitle}>{nextSession.name || nextSession.title}</Text>
             <View style={styles.nextSessionDetails}>
               <View style={styles.detailItem}>
                 <ClockIcon color={colors.white} size={16} />
-                <Text style={styles.detailText}>{nextSession.duracao || 45} min</Text>
+                <Text style={styles.detailText}>{nextSession.duration || 45} min</Text>
               </View>
               <View style={styles.detailItem}>
                 <ActivityIcon color={colors.white} size={16} />
-                <Text style={styles.detailText}>{nextSession.tipo || "Treino"}</Text>
+                <Text style={styles.detailText}>{nextSession.training_type || "Treino"}</Text>
               </View>
             </View>
             <TouchableOpacity

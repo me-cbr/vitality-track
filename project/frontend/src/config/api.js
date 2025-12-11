@@ -1,14 +1,43 @@
 import AsyncStorage from "@react-native-async-storage/async-storage"
-import { Platform, __DEV__ } from "react-native"
+import { Platform } from "react-native"
+import Constants from 'expo-constants'
 
 export const USE_MOCK_DATA = false // Set to false when backend is ready
 
-// Configure your backend URL here
-// For development: use your local IP address (e.g., 'http://192.168.1.100:8000')
-// For production: use your deployed backend URL
-// Dev hosts: use Android emulator host for Android, localhost for iOS simulator.
-const DEV_HOST = Platform.OS === 'android' ? 'http://10.0.2.2:8000/api' : 'http://localhost:8000/api'
-export const API_BASE_URL = __DEV__ ? DEV_HOST : "http://localhost:8000/api"
+// Configure your backend URL here.
+// Priority for base URL (highest -> lowest):
+// 1. process.env.API_BASE_URL (if provided)
+// 2. Expo debugger host IP (when running with `expo start`) -> useful for physical devices
+// 3. Android emulator special host (10.0.2.2)
+// 4. localhost for iOS simulator / web
+let devHost = null
+
+// Try to detect expo debugger host (packager) IP which is helpful when running on
+// a physical device using the same network as the dev machine.
+try {
+  const dbg = Constants?.manifest?.debuggerHost || Constants?.debuggerHost
+  if (dbg && typeof dbg === 'string' && dbg.indexOf(':') > -1) {
+    const ip = dbg.split(':')[0]
+    devHost = `http://${ip}:8000/api`
+  }
+} catch (e) {
+  /* ignore */
+}
+
+if (!devHost) {
+  devHost = Platform.OS === 'android' ? 'http://10.0.2.2:8000/api' : 'http://192.168.18.18:8000/api'
+}
+
+// Allow explicit override via env var (useful when running on device or CI)
+export const API_BASE_URL = process.env.API_BASE_URL || devHost
+
+// Debug: log the selected base URL at startup to help troubleshooting network issues
+try {
+  // eslint-disable-next-line no-console
+  console.debug("API_BASE_URL:", API_BASE_URL)
+} catch (e) {
+  /* ignore logging errors */
+}
 
 // API client with authentication
 class ApiClient {
@@ -26,6 +55,14 @@ class ApiClient {
       this._refresh = refresh || null
       await AsyncStorage.setItem("accessToken", access || "")
       if (refresh) await AsyncStorage.setItem("refreshToken", refresh)
+      try {
+        // Mask tokens when logging for safety
+        const mask = (t) => (t ? `${t.slice(0, 8)}...${t.slice(-4)}` : null)
+        // eslint-disable-next-line no-console
+        console.debug('Tokens saved to AsyncStorage - access:', mask(access), 'refresh:', mask(refresh))
+      } catch (e) {
+        /* ignore logging errors */
+      }
     } catch (err) {
       console.error(" Error saving tokens:", err)
     }
@@ -47,6 +84,13 @@ class ApiClient {
       if (this._access) return this._access
       const t = await AsyncStorage.getItem("accessToken")
       this._access = t || null
+      try {
+        const mask = (s) => (s ? `${s.slice(0, 8)}...${s.slice(-4)}` : null)
+        // eslint-disable-next-line no-console
+        console.debug('Retrieved accessToken from AsyncStorage:', mask(this._access))
+      } catch (e) {
+        /* ignore */
+      }
       return this._access
     } catch (err) {
       return null
@@ -58,6 +102,13 @@ class ApiClient {
       if (this._refresh) return this._refresh
       const t = await AsyncStorage.getItem("refreshToken")
       this._refresh = t || null
+      try {
+        const mask = (s) => (s ? `${s.slice(0, 8)}...${s.slice(-4)}` : null)
+        // eslint-disable-next-line no-console
+        console.debug('Retrieved refreshToken from AsyncStorage:', mask(this._refresh))
+      } catch (e) {
+        /* ignore */
+      }
       return this._refresh
     } catch (err) {
       return null

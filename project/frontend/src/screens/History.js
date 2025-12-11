@@ -9,6 +9,7 @@ import { esrService } from "../services/esrService"
 import { trainingService } from "../services/trainingService"
 import { athleteService } from "../services/athleteService"
 import { getZoneColorByNumber, getZoneNameByNumber } from "../utils/zoneUtils"
+import { USE_MOCKS, mockData } from "../config/mockData"
 
 export default function History() {
   const { user } = useAuth()
@@ -28,25 +29,47 @@ export default function History() {
       setLoading(true)
       const athleteId = user?.atleta_id || user?.athleteId || user?.id
 
-      // ESR records
-      const esrRecords = await esrService.getESRRecords(athleteId).catch(() => [])
-      const filteredESR = filterByPeriod(esrRecords, selectedPeriod)
-      setEsrData(filteredESR.sort((a, b) => new Date(a.data) - new Date(b.data)))
+      if (USE_MOCKS) {
+        // Use mock data
+        const esrRecords = mockData.subjectiveScales.filter(s => s.athlete_id === athleteId)
+        const filteredESR = filterByPeriod(esrRecords, selectedPeriod)
+        setEsrData(filteredESR.sort((a, b) => new Date(a.created_at || a.data) - new Date(b.created_at || b.data)))
 
-      // Sessions
-      const sessions = await trainingService.getSessions(athleteId).catch(() => [])
-      const completedSessions = sessions.filter((s) => s.status === "concluido")
-      const sorted = completedSessions.sort((a, b) => new Date(b.data) - new Date(a.data))
-      setSessionsData(sorted.slice(0, 10))
+        const sessions = mockData.trainingSessions.filter(s => s.athlete_id === athleteId)
+        const completedSessions = sessions.filter((s) => s.status === "concluido")
+        const sorted = completedSessions.sort((a, b) => new Date(b.date) - new Date(a.date))
+        setSessionsData(sorted.slice(0, 10))
 
-      // Stats (from athlete service)
-      const stats = await athleteService.getAthleteStats(athleteId).catch(() => null)
-      setStatsData(stats)
+        const stats = {
+          total_sessions: sessions.length,
+          total_minutes: sessions.reduce((acc, s) => acc + (s.duration || 0), 0)
+        }
+        setStatsData(stats)
 
-      // Assessments
-      const assessments = await trainingService.getAssessments(athleteId).catch(() => [])
-      const latestAssessment = assessments.sort((a, b) => new Date(b.data) - new Date(a.data))[0]
-      setAssessmentData(latestAssessment)
+        const assessments = mockData.assessments.filter(a => a.athlete_id === athleteId)
+        const latestAssessment = assessments.sort((a, b) => new Date(b.data) - new Date(a.data))[0]
+        setAssessmentData(latestAssessment)
+      } else {
+        // ESR records
+        const esrRecords = await esrService.getESRRecords(athleteId).catch(() => [])
+        const filteredESR = filterByPeriod(esrRecords, selectedPeriod)
+        setEsrData(filteredESR.sort((a, b) => new Date(a.data) - new Date(b.data)))
+
+        // Sessions
+        const sessions = await trainingService.getSessions(athleteId).catch(() => [])
+        const completedSessions = sessions.filter((s) => s.status === "concluido")
+        const sorted = completedSessions.sort((a, b) => new Date(b.date) - new Date(a.date))
+        setSessionsData(sorted.slice(0, 10))
+
+        // Stats (from athlete service)
+        const stats = await athleteService.getAthleteStats(athleteId).catch(() => null)
+        setStatsData(stats)
+
+        // Assessments
+        const assessments = await trainingService.getAssessments(athleteId).catch(() => [])
+        const latestAssessment = assessments.sort((a, b) => new Date(b.data) - new Date(a.data))[0]
+        setAssessmentData(latestAssessment)
+      }
     } catch (error) {
       console.error("Error loading history data:", error)
       Alert.alert("Erro", "Não foi possível carregar o histórico")
@@ -77,7 +100,7 @@ export default function History() {
   }
 
   const calculateTotalTime = () => {
-    return sessionsData.reduce((total, session) => total + (session.duracao || 0), 0)
+    return sessionsData.reduce((total, session) => total + (session.duration || 0), 0)
   }
 
   const getZoneColor = (zoneNum) => {
@@ -182,9 +205,9 @@ export default function History() {
           <View style={styles.zonesList}>
             {sessionsData.length > 0 ? (
               sessionsData.slice(0, 5).map((session, index) => {
-                const zoneColor = getZoneColor(session.zona_alvo)
-                const zoneName = getZoneName(session.zona_alvo)
-                const date = new Date(session.data)
+                const zoneColor = getZoneColor(session.target_zone || session.zona_alvo)
+                const zoneName = getZoneName(session.target_zone || session.zona_alvo)
+                const date = new Date(session.date || session.data)
                 const dateStr = date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })
 
                 return (
@@ -192,13 +215,13 @@ export default function History() {
                     <View style={styles.zoneItemLeft}>
                       <View style={[styles.zoneIndicator, { backgroundColor: zoneColor }]} />
                       <View>
-                        <Text style={styles.sessionName}>{session.nome}</Text>
+                        <Text style={styles.sessionName}>{session.training_type || session.name}</Text>
                         <Text style={styles.sessionDate}>{dateStr}</Text>
                       </View>
                     </View>
                     <View style={styles.zoneItemRight}>
                       <Text style={styles.zoneName}>{zoneName}</Text>
-                      <Text style={styles.zoneDuration}>{session.duracao}min</Text>
+                      <Text style={styles.zoneDuration}>{session.duration}min</Text>
                     </View>
                   </View>
                 )

@@ -18,6 +18,7 @@ import { trainingService } from "../services/trainingService"
 import { useFeedback } from "../contexts/FeedbackContext"
 import { useAuth } from "../contexts/AuthContext"
 import { getZoneColorByNumber } from "../utils/zoneUtils"
+import { USE_MOCKS, mockData } from "../config/mockData"
 
 export default function SessionDetail({ navigation, route }) {
   const { sessionId } = route.params || {}
@@ -38,7 +39,9 @@ export default function SessionDetail({ navigation, route }) {
   const loadSession = async () => {
     try {
       setLoading(true)
-      const data = await trainingService.getSessionById(sessionId)
+      const data = USE_MOCKS
+        ? mockData.trainingSessions.find(s => s.id === sessionId)
+        : await trainingService.getSessionById(sessionId)
       setSession(data)
     } catch (error) {
       console.error(" Error loading session:", error)
@@ -132,9 +135,9 @@ export default function SessionDetail({ navigation, route }) {
           {/* Session Title */}
           <View style={styles.titleRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.sessionTitle}>{session.nome || "Treino"}</Text>
+              <Text style={styles.sessionTitle}>{session.training_type || session.name || "Treino"}</Text>
               <Text style={styles.sessionDate}>
-                {session.data} - {session.hora}
+                {session.date || session.date}
               </Text>
             </View>
             {session.status === "concluido" && (
@@ -156,19 +159,19 @@ export default function SessionDetail({ navigation, route }) {
             </View>
             <View style={styles.metricCard}>
               <ClockIcon color={colors.primary} size={24} />
-              <Text style={styles.metricValue}>{session.duracao || "45"} min</Text>
+              <Text style={styles.metricValue}>{session.duration || "45"} min</Text>
               <Text style={styles.metricLabel}>Duração</Text>
             </View>
             <View style={styles.metricCard}>
               <ActivityIcon color={colors.primary} size={24} />
-              <Text style={styles.metricValue}>{session.intensidade || "Alta"}</Text>
+              <Text style={styles.metricValue}>{session.intensity || session.intensidade || "Alta"}</Text>
               <Text style={styles.metricLabel}>Intensidade</Text>
             </View>
           </View>
 
           {/* Zone Badge */}
-          <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.zona_alvo) }]}>
-            <Text style={styles.zoneText}>{session.zona_alvo || "Zona 4 - Anaeróbica"}</Text>
+          <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.target_zone || session.zona_alvo) }]}>
+            <Text style={styles.zoneText}>{session.target_zone || session.zona_alvo || "Zona 4 - Anaeróbica"}</Text>
           </View>
 
           <View style={styles.divider} />
@@ -232,10 +235,6 @@ export default function SessionDetail({ navigation, route }) {
 
             <Text style={styles.modalLabel}>Como você se sente após o treino? (ESR)</Text>
             <View style={styles.esrSliderContainer}>
-              <View style={styles.esrLabels}>
-                <Text style={styles.esrLabelText}>Péssimo</Text>
-                <Text style={styles.esrLabelText}>Ótimo</Text>
-              </View>
               <View style={styles.esrValueDisplay}>
                 <Text style={styles.esrValueText}>{esrValue}</Text>
               </View>

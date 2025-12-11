@@ -7,6 +7,7 @@ import { ClockIcon, ActivityIcon, CheckCircleIcon } from "../components/Icons"
 import { trainingService } from "../services/trainingService"
 import { useAuth } from "../contexts/AuthContext"
 import { getZoneColorByNumber } from "../utils/zoneUtils"
+import { USE_MOCKS, mockData } from "../config/mockData"
 
 export default function SessionsList({ navigation }) {
   const { user } = useAuth()
@@ -22,7 +23,9 @@ export default function SessionsList({ navigation }) {
     setLoading(true)
     try {
       if (user?.id) {
-        const fetchedSessions = await trainingService.getSessions(user.id)
+        const fetchedSessions = USE_MOCKS 
+          ? mockData.trainingSessions.filter(s => s.athlete_id === user.id)
+          : await trainingService.getSessions(user.id)
         setSessions(fetchedSessions)
       }
     } catch (error) {
@@ -88,15 +91,15 @@ export default function SessionsList({ navigation }) {
                     <Text style={styles.timeText}>{session.dayLabel || "Hoje"}</Text>
                   </View>
                   <View style={styles.sessionInfo}>
-                    <Text style={styles.sessionName}>{session.title}</Text>
+                    <Text style={styles.sessionName}>{session.training_type || session.title}</Text>
                     <View style={styles.sessionMeta}>
                       <ActivityIcon color={colors.textSecondary} size={12} />
-                      <Text style={styles.durationText}>{session.duracao} min</Text>
+                      <Text style={styles.durationText}>{session.duration} min</Text>
                     </View>
                   </View>
                 </View>
-                <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.zone) }]}>
-                  <Text style={styles.zoneText}>Z{session.zone}</Text>
+                <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.target_zone || session.zone) }]}>
+                  <Text style={styles.zoneText}>Z{session.target_zone ? (session.target_zone.match(/(\d+)/) || [3])[0] : session.zone}</Text>
                 </View>
               </TouchableOpacity>
             ))}
@@ -116,14 +119,14 @@ export default function SessionsList({ navigation }) {
                 <View style={styles.sessionLeft}>
                   <CheckCircleIcon color={colors.success} size={20} />
                   <View style={styles.sessionInfo}>
-                    <Text style={[styles.sessionName, styles.completedText]}>{session.title}</Text>
+                    <Text style={[styles.sessionName, styles.completedText]}>{session.training_type || session.title}</Text>
                     <View style={styles.sessionMeta}>
-                      <Text style={styles.durationText}>{session.duracao} min</Text>
+                      <Text style={styles.durationText}>{session.duration} min</Text>
                     </View>
                   </View>
                 </View>
-                <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.zone) }]}>
-                  <Text style={styles.zoneText}>Z{session.zone}</Text>
+                <View style={[styles.zoneBadge, { backgroundColor: getZoneColor(session.target_zone || session.zone) }]}>
+                  <Text style={styles.zoneText}>Z{session.target_zone ? (session.target_zone.match(/(\d+)/) || [3])[0] : session.zone}</Text>
                 </View>
               </TouchableOpacity>
             ))}

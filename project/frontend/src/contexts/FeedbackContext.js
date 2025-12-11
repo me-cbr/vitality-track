@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState } from "react"
 import { feedbackService } from "../services/feedbackService"
+import { USE_MOCKS, mockData } from "../config/mockData"
 
 const FeedbackContext = createContext(null)
 
@@ -14,13 +15,14 @@ export function FeedbackProvider({ children }) {
     setLoading(true)
     setError(null)
     try {
-      const data = await feedbackService.getFeedbacks()
+      const data = USE_MOCKS ? mockData.feedbacks : await feedbackService.getFeedbacks()
       const normalized = data.map((f) => ({
         id: f.id,
         mensagem: f.mensagem || f.message,
-        data: f.data || f.date,
+        data: f.data || f.date || f.created_at,
         atleta_id: f.atleta_id || f.athlete_id || f.athleteId,
         treinador_id: f.treinador_id || f.coach_id || f.coachId,
+        tipo_mensagem: f.tipo_mensagem || f.message_type,
         lido: f.lido || f.read || false,
       }))
       setFeedbacks(normalized)
@@ -44,7 +46,16 @@ export function FeedbackProvider({ children }) {
         lido: false,
       }
       const newFeedback = await feedbackService.createFeedback(feedbackData)
-      setFeedbacks((prev) => [newFeedback, ...prev])
+      const normalized = {
+        id: newFeedback.id,
+        mensagem: newFeedback.mensagem || newFeedback.message,
+        data: newFeedback.data || newFeedback.created_at,
+        atleta_id: newFeedback.atleta_id || newFeedback.athlete_id || newFeedback.athleteId,
+        treinador_id: newFeedback.treinador_id || newFeedback.coach_id || newFeedback.coachId,
+        tipo_mensagem: newFeedback.tipo_mensagem || newFeedback.message_type || feedbackData.tipo_mensagem,
+        lido: newFeedback.lido || newFeedback.read || false,
+      }
+      setFeedbacks((prev) => [normalized, ...prev])
       return newFeedback
     } catch (err) {
       console.error("Error adding feedback:", err)

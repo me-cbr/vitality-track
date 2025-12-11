@@ -34,13 +34,13 @@ export default function PlanEditor({ navigation, route }) {
       setLoading(true)
       const session = await trainingService.getSessionById(sessionId)
       if (session) {
-        setSessionName(session.nome || session.title)
-        setSessionType(session.tipo)
-        setSessionIntensity(session.intensidade)
-        setSessionDuration(String(session.duracao))
-        setSessionDate(session.data?.split("T")[0] || "")
-        setSessionTime(session.hora || session.data?.split("T")[1]?.slice(0, 5) || "14:00")
-        setSessionZone(String(session.zone || 3))
+        setSessionName(session.name || session.title)
+        setSessionType(session.training_type)
+        setSessionIntensity(session.intensity)
+        setSessionDuration(String(session.duration))
+        setSessionDate(session.date?.split("T")[0] || "")
+        setSessionTime(session.time || session.date?.split("T")[1]?.slice(0, 5) || "14:00")
+        setSessionZone(String(session.target_zone || 3))
       }
     } catch (error) {
       console.error("Error loading session:", error)
@@ -59,14 +59,13 @@ export default function PlanEditor({ navigation, route }) {
     try {
       setSaving(true)
       const sessionData = {
-        nome: sessionName,
-        zona_alvo: `Zona ${sessionZone}`, // Must match database schema format
-        tipo: sessionType,
-        intensidade: sessionIntensity,
-        duracao: Number.parseInt(sessionDuration),
-        data: sessionDate,
-        hora: sessionTime,
-        atleta_id: athleteId, // Coach must provide athlete assignment
+        target_zone: `Zona ${sessionZone}`,
+        training_type: sessionType,
+        intensity: sessionIntensity,
+        duration: Number.parseInt(sessionDuration),
+        date: sessionDate,
+        time: sessionTime,
+        athlete_id: athleteId,
       }
 
       if (mode === "edit" && sessionId) {

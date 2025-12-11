@@ -147,14 +147,14 @@ class CoachSerializer(serializers.ModelSerializer):
 
 
 class TrainingPlanSerializer(serializers.ModelSerializer):
-    # Accept both English and Portuguese field names coming from frontend
-    nome = serializers.CharField(source="name", required=False)
-    descricao = serializers.CharField(
+    # Accept English field names that match the model
+    name = serializers.CharField(source="name", required=False)
+    description = serializers.CharField(
         source="description", required=False, allow_blank=True
     )
-    data_inicio = serializers.DateField(source="start_date", required=False)
-    data_fim = serializers.DateField(source="end_date", required=False)
-    atleta_id = serializers.PrimaryKeyRelatedField(
+    start_date = serializers.DateField(source="start_date", required=False)
+    end_date = serializers.DateField(source="end_date", required=False)
+    athlete_id = serializers.PrimaryKeyRelatedField(
         source="athlete", queryset=User.objects.all(), required=False
     )
 
@@ -167,23 +167,24 @@ class TrainingPlanSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "athlete",
+            "athlete_id",
         )
         read_only_fields = ("athlete",)
 
 
 class TrainingSessionSerializer(serializers.ModelSerializer):
-    zona_alvo = serializers.CharField(source="target_zone", required=False)
-    tipo = serializers.CharField(
-        source="training_type", required=False, allow_blank=True
-    )
-    intensidade = serializers.CharField(
-        source="intensity", required=False, allow_blank=True
-    )
-    duracao = serializers.IntegerField(source="duration", required=False)
-    data = serializers.DateTimeField(source="date", required=False)
-    plano_id = serializers.PrimaryKeyRelatedField(
-        source="training_plan", queryset=TrainingPlan.objects.all(), required=False
-    )
+    # # canonical English fields
+    # target_zone = serializers.CharField(required=False)
+    # training_type = serializers.CharField(required=False, allow_blank=True)
+    # intensity = serializers.CharField(required=False, allow_blank=True)
+    # duration = serializers.IntegerField(required=False)
+    # date = serializers.DateTimeField(required=False)
+    # training_plan_id = serializers.PrimaryKeyRelatedField(
+    #     source="training_plan", queryset=TrainingPlan.objects.all(), required=False
+    # )
+    # athlete_id = serializers.PrimaryKeyRelatedField(
+    #     source="athlete",
+    #     queryset=User.objects.all(), required=False)
 
     class Meta:
         model = TrainingSession
@@ -202,7 +203,7 @@ class PhysicalEvaluationSerializer(serializers.ModelSerializer):
     heart_rate = serializers.IntegerField()
     observations = serializers.CharField(allow_blank=True, required=False)
     training_zone = serializers.CharField(allow_blank=True, required=False)
-    atleta_id = serializers.PrimaryKeyRelatedField(
+    athlete_id = serializers.PrimaryKeyRelatedField(
         source="athlete", queryset=User.objects.all(), required=False
     )
 
@@ -215,7 +216,7 @@ class PhysicalEvaluationSerializer(serializers.ModelSerializer):
             "observations",
             "training_zone",
             "athlete",
-            "atleta_id",
+            "athlete_id",
         )
 
 
@@ -224,18 +225,18 @@ class SubjectiveScaleSerializer(serializers.ModelSerializer):
     scale_type = serializers.CharField()
     value = serializers.IntegerField()
     date = serializers.DateTimeField(required=False)
-    atleta_id = serializers.PrimaryKeyRelatedField(
+    athlete_id = serializers.PrimaryKeyRelatedField(
         source="athlete", queryset=User.objects.all(), required=False
     )
 
     class Meta:
         model = SubjectiveScale
-        fields = ("id", "scale_type", "value", "date", "athlete", "atleta_id")
+        fields = ("id", "scale_type", "value", "date", "athlete", "athlete_id")
 
 
 class FeedbackSerializer(serializers.ModelSerializer):
     lido = serializers.BooleanField(source="marked_as_read", required=False)
-    atleta_id = serializers.PrimaryKeyRelatedField(
+    athlete_id = serializers.PrimaryKeyRelatedField(
         source="athlete", queryset=User.objects.all(), required=False
     )
 
@@ -247,6 +248,7 @@ class FeedbackSerializer(serializers.ModelSerializer):
             "date",
             "marked_as_read",
             "athlete",
+            "athlete_id",
         )
 
 
@@ -259,9 +261,27 @@ class RegisterSerializer(serializers.Serializer):
     user = UserSerializer()
     profile_type = serializers.ChoiceField(choices=("athlete", "coach"), required=False)
 
+    # explicit profile fields so they are validated and available in validated_data
+    # coach fields
+    cref = serializers.CharField(required=False, allow_blank=True)
+    specialty = serializers.CharField(required=False, allow_blank=True)
+
+    # athlete fields
+    birth_date = serializers.DateField(required=False, allow_null=True)
+    weight = serializers.FloatField(required=False, allow_null=True)
+    height = serializers.FloatField(required=False, allow_null=True)
+    resting_heart_rate = serializers.IntegerField(required=False, allow_null=True)
+    coach_related = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), required=False, allow_null=True
+    )
+
     def create(self, validated_data):
         user_data = validated_data.pop("user")
-        profile_type = user_data.pop("user_type", None)
+
+        # accept explicit profile_type (top-level) or nested user.user_type
+        profile_type = validated_data.pop("profile_type", None) or user_data.pop(
+            "user_type", None
+        )
 
         password = user_data.pop("password", None)
         username = user_data.pop("username", None)
@@ -277,7 +297,7 @@ class RegisterSerializer(serializers.Serializer):
 
                 # prefer explicit profile_type; otherwise infer from provided fields
                 if not profile_type:
-                    if "cref" in validated_data or "specialty" in validated_data:
+                    if validated_data.get("cref") or validated_data.get("specialty"):
                         profile_type = "coach"
                     else:
                         profile_type = "athlete"

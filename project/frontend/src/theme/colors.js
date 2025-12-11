@@ -1,10 +1,11 @@
 export const colors = {
   // Primary brand colors - soft pastel teal
-  mediumSeaGreen: "#00775CFF", // cor nova
+  mediumSeaGreen: "#00775CFF",
   primary: "#7DD3C0",
   primaryLight: "#A8E6D7",
   primaryDark: "#5BB5A2",
   primaryMedium: "#68b5a2",
+  primaryAppName: "#00a63e",
 
   // Secondary accent - soft lavender
   secondary: "#B8A4D9",
@@ -16,13 +17,13 @@ export const colors = {
   actionDark: "#FF9B85",
 
   // Status colors - pastel versions
-  aquaLight: "#82d6bb", // cor nova
+  aquaLight: "#82d6bb",
   success: "#A8E6CF",
   successLight: "#C8F2E0",
   warning: "#FFE5A0",
   warningLight: "#FFF2CC",
-  mostarda: '#FFDB58',
-  warningDark: 'rgb(252,162,26)',
+  mostarda: "#FFDB58",
+  warningDark: "rgb(252,162,26)",
   danger: "#FFB4B4",
   dangerLight: "#FFD4D4",
   dangerDark: "#FF8A8A",
@@ -42,13 +43,14 @@ export const colors = {
   // White and black
   white: "#FFFFFF",
   black: "#1A202C",
+  gray: "#6B7280",
 
   // Heart rate zones - soft gradient
-  zone1: "#A8E6CF", // Recovery
-  zone2: "#C8F2A8", // Endurance
-  zone3: "#FFE5A0", // Tempo
-  zone4: "#FFB4A2", // Threshold
-  zone5: "#FFB4B4", // Max
+  zone1: "#A8E6CF",
+  zone2: "#C8F2A8",
+  zone3: "#FFE5A0",
+  zone4: "#FFB4A2",
+  zone5: "#FFB4B4",
 }
 
 export const spacing = {

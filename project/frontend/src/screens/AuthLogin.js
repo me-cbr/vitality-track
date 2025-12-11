@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity } from "react-native"
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, TouchableOpacity, Image } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
 import LoadingButton from "../components/LoadingButton"
 import Toast from "../components/Toast"
@@ -50,7 +50,7 @@ export default function AuthLogin({ navigation }) {
 
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>💪</Text>
+          <Image source={require("../../assets/icon.png")} style={styles.logoImage} />
           <Text style={styles.appName}>VitalityCheck</Text>
         </View>
 
@@ -83,12 +83,6 @@ export default function AuthLogin({ navigation }) {
             />
           </View>
 
-          {/*<View style={styles.helpContainer}>*/}
-          {/*  <Text style={styles.helpText}>Credenciais de teste:</Text>*/}
-          {/*  <Text style={styles.helpDetail}>Atleta: atleta@email.com / atleta</Text>*/}
-          {/*  <Text style={styles.helpDetail}>Treinador: treinador@email.com / treinador</Text>*/}
-          {/*</View>*/}
-
           <LoadingButton title="Entrar" onPress={handleSubmit} loading={loading} style={{ marginTop: spacing.lg }} />
 
           <TouchableOpacity style={styles.registerButton} onPress={() => navigation.navigate("Register")}>
@@ -120,10 +114,16 @@ const styles = StyleSheet.create({
     fontSize: 64,
     marginBottom: spacing.sm,
   },
+  logoImage: {
+    width: 90,
+    height: 90,
+    marginBottom: spacing.sm,
+    borderRadius: 12,
+  },
   appName: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.primary,
+    color: colors.gray,
     letterSpacing: -0.5,
   },
   title: {

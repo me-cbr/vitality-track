@@ -78,7 +78,11 @@ export default function AthleteDetailTreinador({ navigation, route }) {
   }
 
   const displayAthlete = athlete || {}
-  const displayAge = displayAthlete?.data_nascimento ? calculateAge(displayAthlete.data_nascimento) : 0
+  const displayName = athlete?.user
+    ? `${athlete.user.first_name || ""}${athlete.user.last_name ? ` ${athlete.user.last_name}` : ""}`.trim()
+    : displayAthlete.name || displayAthlete.nome || "Atleta"
+  const displayEmail = athlete?.user?.email || displayAthlete.email || "email@example.com"
+  const displayAge = displayAthlete?.birth_date ? calculateAge(displayAthlete.birth_date) : 0
 
   return (
     <View style={styles.container}>
@@ -94,14 +98,14 @@ export default function AthleteDetailTreinador({ navigation, route }) {
         <View style={[styles.profileCard, shadows.md]}>
           <View style={styles.avatar}>
             <Text style={styles.avatarText}>
-              {athlete.name
+              {(displayName
                 ?.split(" ")
                 .map((n) => n[0])
-                .join("") || "??"}
+                .join("") || "??")}
             </Text>
           </View>
-          <Text style={styles.name}>{athlete.name || "Atleta"}</Text>
-          <Text style={styles.email}>{athlete.email || "email@example.com"}</Text>
+          <Text style={styles.name}>{displayName}</Text>
+          <Text style={styles.email}>{displayEmail}</Text>
         </View>
 
         <View style={[styles.card, shadows.sm]}>
@@ -109,11 +113,11 @@ export default function AthleteDetailTreinador({ navigation, route }) {
           <View style={styles.dataGrid}>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Peso</Text>
-              <Text style={styles.dataValue}>{displayAthlete?.peso || 0} kg</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.weight || 0} kg</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Altura</Text>
-              <Text style={styles.dataValue}>{displayAthlete?.altura || 0} m</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.height || 0} m</Text>
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>Idade</Text>
@@ -121,7 +125,7 @@ export default function AthleteDetailTreinador({ navigation, route }) {
             </View>
             <View style={styles.dataItem}>
               <Text style={styles.dataLabel}>FC Rep.</Text>
-              <Text style={styles.dataValue}>{displayAthlete?.frequencia_cardiaca_repouso || 0} bpm</Text>
+              <Text style={styles.dataValue}>{displayAthlete?.resting_heart_rate || 0} bpm</Text>
             </View>
           </View>
         </View>
@@ -188,10 +192,10 @@ export default function AthleteDetailTreinador({ navigation, route }) {
               {sessions.map((session) => (
                 <View key={session.id} style={styles.sessionItem}>
                   <View style={styles.sessionInfo}>
-                    <Text style={styles.sessionName}>{session.nome || session.title}</Text>
-                    <Text style={styles.sessionZone}>{session.zona_alvo || `Zona ${session.zone}`}</Text>
+                    <Text style={styles.sessionName}>{session.name || session.title}</Text>
+                    <Text style={styles.sessionZone}>{session.target_zone || `Zona ${session.zone}`}</Text>
                     <Text style={styles.sessionMeta}>
-                      {session.tipo} • {session.duracao}min • {session.data?.split("T")[0]}
+                      {session.training_type} • {session.duration}min • {session.date?.split("T")[0]}
                     </Text>
                   </View>
                   <TouchableOpacity

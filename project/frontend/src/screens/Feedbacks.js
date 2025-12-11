@@ -1,25 +1,75 @@
 "use client"
 
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from "react-native"
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, TextInput } from "react-native"
 import { useEffect, useState } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
 import { FeedbackIcon, CheckCircleIcon, SendIcon } from "../components/Icons"
+import { athleteService } from "../services/athleteService"
+import { USE_MOCKS, mockData } from "../config/mockData"
 import { useFeedback } from "../contexts/FeedbackContext"
 import { useAuth } from "../contexts/AuthContext"
 
 export default function Feedbacks({ navigation }) {
-  const { feedbacks, loading, error, fetchFeedbacks, markAsRead } = useFeedback()
+  const { feedbacks, loading, error, fetchFeedbacks, markAsRead, addFeedback } = useFeedback()
   const { user } = useAuth()
   const [refreshing, setRefreshing] = useState(false)
+  const [messageType, setMessageType] = useState("orientacao")
+  const [messageText, setMessageText] = useState("")
+  const [targetAthleteId, setTargetAthleteId] = useState(null)
+  const [targetCoachId, setTargetCoachId] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [athletesOptions, setAthletesOptions] = useState([])
+  const [coachesOptions, setCoachesOptions] = useState([])
 
   useEffect(() => {
     fetchFeedbacks()
   }, [])
 
+  useEffect(() => {
+    // Load selectable options depending on user type
+    const loadOptions = async () => {
+      try {
+        if (user?.user_type === "coach") {
+          const list = await athleteService.getAthletes(user?.id || user?.user?.id)
+          const opts = (list || []).map((a) => ({ id: a.id, name: `${a.user?.first_name || ''} ${a.user?.last_name || ''}`.trim() || `Atleta ${a.id}` }))
+          setAthletesOptions(opts)
+        } else if (user?.user_type === "athlete") {
+          const coaches = USE_MOCKS ? mockData.coaches : []
+          const opts = (coaches || []).map((c) => ({ id: c.id, name: `${c.user?.first_name || ''} ${c.user?.last_name || ''}`.trim() || `Treinador ${c.id}` }))
+          setCoachesOptions(opts)
+        }
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.error('Error loading options:', err)
+      }
+    }
+    loadOptions()
+  }, [user])
+
   const onRefresh = async () => {
     setRefreshing(true)
     await fetchFeedbacks()
     setRefreshing(false)
+  }
+
+  const handleSubmitFeedback = async () => {
+    if (!messageText.trim()) return
+    try {
+      setSubmitting(true)
+      const payload = {
+        mensagem: messageText.trim(),
+        tipo_mensagem: messageType,
+        atleta_id: user?.user_type === "coach" ? targetAthleteId : user?.athlete_id || null,
+        treinador_id: user?.user_type === "coach" ? (user?.id || user?.user?.id) : targetCoachId,
+      }
+      await addFeedback(payload)
+      setMessageText("")
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error('Error submitting feedback:', err)
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   const displayFeedbacks =
@@ -63,6 +113,95 @@ export default function Feedbacks({ navigation }) {
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} />}
       >
+        {/* Add Feedback Form
+        <View style={styles.section}>
+          <View style={[styles.feedbackCard, shadows.sm]}> 
+            <Text style={styles.formTitle}>Adicionar Feedback</Text>
+            {user?.user_type === "coach" && (
+              <View style={styles.row}>
+                <View style={[styles.inputContainer, { flex: 1 }]}> 
+                  <Text style={styles.inputLabel}>ID do Atleta</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.xs }}>
+                    <View style={styles.typePickerRow}>
+                      {athletesOptions.map((opt) => (
+                        <TouchableOpacity
+                          key={opt.id}
+                          style={[styles.chip, targetAthleteId === opt.id ? styles.chipActive : null]}
+                          onPress={() => setTargetAthleteId(opt.id)}
+                        >
+                          <Text style={styles.chipText}>{opt.name || `Atleta ${opt.id}`}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+              </View>
+            )}
+            {user?.user_type === "athlete" && (
+              <View style={styles.row}>
+                <View style={[styles.inputContainer, { flex: 1 }]}> 
+                  <Text style={styles.inputLabel}>Treinador</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: spacing.xs }}>
+                    <View style={styles.typePickerRow}>
+                      {coachesOptions.map((opt) => (
+                        <TouchableOpacity
+                          key={opt.id}
+                          style={[styles.chip, targetCoachId === opt.id ? styles.chipActive : null]}
+                          onPress={() => setTargetCoachId(opt.id)}
+                        >
+                          <Text style={styles.chipText}>{opt.name || `Treinador ${opt.id}`}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+              </View>
+            )}
+            <View style={styles.row}>
+              <View style={[styles.inputContainer, { flex: 1 }]}> 
+                <Text style={styles.inputLabel}>Tipo</Text>
+                <View style={styles.typePickerRow}>
+                  {[
+                    { key: "elogio", label: "Elogio" },
+                    { key: "orientacao", label: "Orientação" },
+                    { key: "alerta", label: "Alerta" },
+                  ].map((opt) => (
+                    <TouchableOpacity
+                      key={opt.key}
+                      style={[styles.chip, messageType === opt.key ? styles.chipActive : null]}
+                      onPress={() => setMessageType(opt.key)}
+                    >
+                      <Text style={styles.chipText}>{opt.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Mensagem</Text>
+              <TextInput
+                style={[styles.input, { height: 90 }]}
+                multiline
+                placeholder="Escreva seu feedback..."
+                value={messageText}
+                onChangeText={setMessageText}
+                placeholderTextColor={colors.textTertiary}
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.submitButton, submitting ? styles.submitDisabled : null]}
+              onPress={handleSubmitFeedback}
+              disabled={
+                submitting ||
+                (user?.user_type === 'coach' && !targetAthleteId) ||
+                (user?.user_type === 'athlete' && !targetCoachId)
+              }
+            >
+              <Text style={styles.submitButtonText}>{submitting ? 'Enviando...' : 'Enviar Feedback'}</Text>
+            </TouchableOpacity>
+          </View>
+        </View> */}
+
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>Erro ao carregar feedbacks</Text>
@@ -337,5 +476,67 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: "center",
     maxWidth: 280,
+  },
+  formTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+    marginBottom: spacing.sm,
+  },
+  inputContainer: {
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  inputLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    marginLeft: spacing.xs,
+  },
+  input: {
+    height: 48,
+    borderWidth: 2,
+    borderColor: colors.border,
+    borderRadius: borderRadius.lg,
+    paddingHorizontal: spacing.md,
+    fontSize: 14,
+    color: colors.text,
+    backgroundColor: colors.white,
+  },
+  typePickerRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.neutralBg,
+  },
+  chipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '15',
+  },
+  chipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  submitButton: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+  },
+  submitButtonText: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  submitDisabled: {
+    opacity: 0.6,
   },
 })

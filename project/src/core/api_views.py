@@ -74,7 +74,6 @@ class AthleteViewSet(viewsets.ModelViewSet):
         logger.info(
             "Athlete create called; payload keys: %s", list(request.data.keys())
         )
-        # hide password in logs
         try:
             user_data = request.data.get("user", {})
             logger.debug(
@@ -85,7 +84,6 @@ class AthleteViewSet(viewsets.ModelViewSet):
         except Exception:
             logger.exception("Error reading user payload for logging")
 
-        """Override create to return JWT tokens upon successful registration."""
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -100,13 +98,14 @@ class AthleteViewSet(viewsets.ModelViewSet):
         tokens = {}
         if user is not None:
             refresh = RefreshToken.for_user(user)
-            tokens = {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }
+            tokens = {"access": str(refresh.access_token), "refresh": str(refresh)}
 
-        data = {**serializer.data, **tokens}
+        out = AthleteSerializer(serializer.instance).data
+        data = {**out, **tokens}
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
+    # AthleteViewSet is intentionally minimal; session-related endpoints
+    # belong to TrainingSessionViewSet below.
 
 
 class CoachViewSet(viewsets.ModelViewSet):
@@ -115,27 +114,12 @@ class CoachViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        # allow unauthenticated users to register (create) coaches
         if self.action == "create":
             return [AllowAny()]
         return [permission() for permission in self.permission_classes]
 
-    def perform_create(self, serializer):
-        serializer.save()
-
     def create(self, request, *args, **kwargs):
         logger = logging.getLogger(__name__)
-        logger.info("Coach create called; payload keys: %s", list(request.data.keys()))
-        try:
-            user_data = request.data.get("user", {})
-            logger.debug(
-                "Coach user payload (masked): username=%s, email=%s",
-                user_data.get("username"),
-                user_data.get("email"),
-            )
-        except Exception:
-            logger.exception("Error reading user payload for logging")
-
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
@@ -149,45 +133,126 @@ class CoachViewSet(viewsets.ModelViewSet):
         tokens = {}
         if user is not None:
             refresh = RefreshToken.for_user(user)
-            tokens = {
-                "access": str(refresh.access_token),
-                "refresh": str(refresh),
-            }
+            tokens = {"access": str(refresh.access_token), "refresh": str(refresh)}
 
-        data = {**serializer.data, **tokens}
+        out = CoachSerializer(serializer.instance).data
+        data = {**out, **tokens}
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
 
 class TrainingPlanViewSet(viewsets.ModelViewSet):
     queryset = TrainingPlan.objects.select_related("athlete").all()
     serializer_class = TrainingPlanSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
-    def perform_create(self, serializer):
-        # set the owner athlete to the requesting user
-        serializer.save(athlete=self.request.user)
+    def get_queryset(self):
+        qs = super().get_queryset()
+        athlete_id = self.request.query_params.get("athlete_id")
+        if athlete_id:
+            qs = qs.filter(athlete__id=athlete_id)
+        return qs
 
 
 class TrainingSessionViewSet(viewsets.ModelViewSet):
-    queryset = TrainingSession.objects.select_related("training_plan").all()
+    queryset = TrainingSession.objects.select_related(
+        "training_plan", "training_plan__athlete"
+    ).all()
     serializer_class = TrainingSessionSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         qs = super().get_queryset()
-        atleta_id = self.request.query_params.get(
-            "atleta_id"
-        ) or self.request.query_params.get("athlete_id")
-        if atleta_id:
-            qs = qs.filter(training_plan__athlete__id=atleta_id)
+        athlete_id = self.request.query_params.get("athlete_id")
+        if athlete_id:
+            qs = qs.filter(training_plan__athlete__id=athlete_id)
         return qs
 
     @action(detail=True, methods=["patch"], permission_classes=[IsAuthenticated])
     def conclude(self, request, pk=None):
-        """Mark a session as completed. Model has no status field; return object for compatibility."""
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        """Create a TrainingSession. Backend expects English field names that
+        match the models. For convenience, if `date` and `time` are provided
+        separately (or `data`/`hora`), the server will attempt to combine them
+        into an ISO datetime string. If `training_plan` is not provided but
+        `athlete_id` is, the server will resolve or create a TrainingPlan and
+        associate it before saving the session.
+        """
+        logger = logging.getLogger(__name__)
+
+        data = (
+            request.data.copy() if hasattr(request.data, "copy") else dict(request.data)
+        )
+
+        # combine date + time if provided separately (expect English keys)
+        d = data.get("date")
+        t = data.get("time")
+        if d and t and "date" not in data:
+            try:
+                data["date"] = f"{d}T{t}:00"
+            except Exception:
+                logger.warning("Could not combine date+time into ISO date: %s %s", d, t)
+
+        # prefer explicit training_plan id fields
+        plan_id = data.get("training_plan_id") or data.get("training_plan")
+        if plan_id and "training_plan" not in data:
+            data["training_plan"] = plan_id
+
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        training_plan = serializer.validated_data.get("training_plan")
+        if training_plan:
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED, headers=headers
+            )
+
+        athlete_id = data.get("athlete_id")
+        if athlete_id:
+            try:
+                user = User.objects.filter(id=athlete_id).first()
+                if not user:
+                    return Response({"detail": "athlete not found"}, status=404)
+
+                plan = (
+                    TrainingPlan.objects.filter(athlete__id=athlete_id)
+                    .order_by("-start_date")
+                    .first()
+                )
+                if not plan:
+                    from datetime import date, timedelta
+
+                    start = date.today()
+                    end = start + timedelta(days=30)
+                    plan = TrainingPlan.objects.create(
+                        name=f"Auto plan {start.isoformat()}",
+                        description="Automatically created plan",
+                        start_date=start,
+                        end_date=end,
+                        athlete=user,
+                    )
+
+                self.perform_create(serializer, training_plan=plan)
+                headers = self.get_success_headers(serializer.data)
+                return Response(
+                    serializer.data, status=status.HTTP_201_CREATED, headers=headers
+                )
+            except Exception as exc:
+                logger.exception("Error creating session with athlete_id: %s", exc)
+                return Response({"detail": "Error creating session"}, status=500)
+
+        return Response({"training_plan": ["This field is required."]}, status=400)
+
+    def perform_create(self, serializer, training_plan=None):
+        if training_plan is not None:
+            serializer.save(training_plan=training_plan)
+        else:
+            serializer.save()
 
 
 class PhysicalEvaluationViewSet(viewsets.ModelViewSet):
@@ -197,11 +262,9 @@ class PhysicalEvaluationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        atleta_id = self.request.query_params.get(
-            "atleta_id"
-        ) or self.request.query_params.get("athlete_id")
-        if atleta_id:
-            qs = qs.filter(athlete__id=atleta_id)
+        athlete_id = self.request.query_params.get("athlete_id")
+        if athlete_id:
+            qs = qs.filter(athlete__id=athlete_id)
         return qs
 
 
@@ -212,13 +275,9 @@ class SubjectiveScaleViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        atleta_id = (
-            self.request.query_params.get("atleta_id")
-            or self.request.query_params.get("atleta")
-            or self.request.query_params.get("athlete_id")
-        )
-        if atleta_id:
-            qs = qs.filter(athlete__id=atleta_id)
+        athlete_id = self.request.query_params.get("athlete_id")
+        if athlete_id:
+            qs = qs.filter(athlete__id=athlete_id)
         return qs
 
     @action(
@@ -242,14 +301,12 @@ class SubjectiveScaleViewSet(viewsets.ModelViewSet):
         detail=False, methods=["get"], permission_classes=[IsAuthenticatedOrReadOnly]
     )
     def history(self, request):
-        atleta_id = request.query_params.get("atleta_id") or request.query_params.get(
-            "atleta"
-        )
+        athlete_id = request.query_params.get("athlete_id")
         start = request.query_params.get("start_date")
         end = request.query_params.get("end_date")
         qs = self.get_queryset()
-        if atleta_id:
-            qs = qs.filter(athlete__id=atleta_id)
+        if athlete_id:
+            qs = qs.filter(athlete__id=athlete_id)
         if start:
             qs = qs.filter(date__gte=start)
         if end:
@@ -265,11 +322,9 @@ class FeedbackViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = super().get_queryset()
-        atleta_id = self.request.query_params.get(
-            "atleta_id"
-        ) or self.request.query_params.get("athlete_id")
-        if atleta_id:
-            qs = qs.filter(athlete__id=atleta_id)
+        athlete_id = self.request.query_params.get("athlete_id")
+        if athlete_id:
+            qs = qs.filter(athlete__id=athlete_id)
         return qs
 
 

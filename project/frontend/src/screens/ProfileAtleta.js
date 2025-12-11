@@ -8,6 +8,20 @@ import { useAuth } from "../contexts/AuthContext"
 export default function ProfileAtleta({ navigation }) {
   const { user } = useAuth()
 
+  // Normaliza dados para lidar com perfil de atleta/treinador vindo do mock (nested user)
+  const nestedUser = user?.user || {}
+  const displayName = nestedUser.first_name
+    ? `${nestedUser.first_name}${nestedUser.last_name ? ` ${nestedUser.last_name}` : ""}`
+    : user?.first_name || user?.nome || "Usuário"
+  const displayEmail = nestedUser.email || user?.email || "email@example.com"
+
+  const weight = user?.peso ?? user?.weight ?? "--"
+  const height = user?.altura ?? user?.height ?? "--"
+  const birthDate = user?.birth_date || user?.data_nascimento || nestedUser.birth_date
+  const age = birthDate ? new Date().getFullYear() - new Date(birthDate).getFullYear() : null
+  const restingHR = user?.frequencia_cardiaca_repouso || user?.resting_heart_rate || "--"
+  const maxHR = user?.max_heart_rate || user?.maxHeartRate || user?.fc_maxima || "--"
+
   if (!user) {
     return (
       <View style={styles.container}>
@@ -35,8 +49,8 @@ export default function ProfileAtleta({ navigation }) {
           <View style={styles.avatar}>
             <UserIcon color={colors.primary} size={48} />
           </View>
-          <Text style={styles.name}>{user?.first_name || user?.first_name || "Usuário"}</Text>
-          <Text style={styles.email}>{user?.email || "email@example.com"}</Text>
+          <Text style={styles.name}>{displayName}</Text>
+          <Text style={styles.email}>{displayEmail}</Text>
         </View>
 
         {(user?.type === "athlete" || user?.tipo_usuario === "atleta") && (
@@ -46,21 +60,15 @@ export default function ProfileAtleta({ navigation }) {
               <View style={styles.dataGrid}>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Peso</Text>
-                  <Text style={styles.dataValue}>{user?.peso || user?.weight || "--"} kg</Text>
+                  <Text style={styles.dataValue}>{weight || "--"} kg</Text>
                 </View>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Altura</Text>
-                  <Text style={styles.dataValue}>{user?.altura || user?.height || "--"} m</Text>
+                  <Text style={styles.dataValue}>{height} m</Text>
                 </View>
                 <View style={styles.dataItem}>
                   <Text style={styles.dataLabel}>Idade</Text>
-                  <Text style={styles.dataValue}>
-                    {user?.age ||
-                      (user?.data_nascimento
-                        ? new Date().getFullYear() - new Date(user.data_nascimento).getFullYear()
-                        : "--")}{" "}
-                    anos
-                  </Text>
+                  <Text style={styles.dataValue}>{age || "--"} anos</Text>
                 </View>
               </View>
             </View>
@@ -72,16 +80,14 @@ export default function ProfileAtleta({ navigation }) {
                   <HeartIcon color={colors.primary} size={20} />
                   <View style={styles.hrInfo}>
                     <Text style={styles.hrLabel}>FC Repouso</Text>
-                    <Text style={styles.hrValue}>
-                      {user?.frequencia_cardiaca_repouso || user?.restingHeartRate || "--"} bpm
-                    </Text>
+                    <Text style={styles.hrValue}>{restingHR} bpm</Text>
                   </View>
                 </View>
                 <View style={styles.hrItem}>
                   <HeartIcon color={colors.danger} size={20} />
                   <View style={styles.hrInfo}>
                     <Text style={styles.hrLabel}>FC Máxima</Text>
-                    <Text style={styles.hrValue}>{user?.maxHeartRate || "--"} bpm</Text>
+                    <Text style={styles.hrValue}>{maxHR} bpm</Text>
                   </View>
                 </View>
               </View>
@@ -98,7 +104,7 @@ export default function ProfileAtleta({ navigation }) {
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Especialidade</Text>
-              <Text style={styles.infoValue}>{user?.especialidade || "Não informada"}</Text>
+              <Text style={styles.infoValue}>{user?.specialty || "Não informada"}</Text>
             </View>
           </View>
         )}

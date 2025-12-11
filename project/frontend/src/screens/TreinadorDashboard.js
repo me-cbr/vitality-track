@@ -13,9 +13,11 @@ import {
 import { useEffect, useRef, useState } from "react"
 import { colors, spacing, borderRadius, shadows } from "../theme/colors"
 import { athleteService } from "../services/athleteService"
+import { trainingService } from "../services/trainingService"
 import { useAuth } from "../contexts/AuthContext"
 import AddAthleteModal from "./AddAthleteModal"
 import { feedbackService } from "../services/feedbackService"
+import { USE_MOCKS, mockData } from "../config/mockData"
 
 export default function TreinadorDashboard({ navigation }) {
   const { user } = useAuth()
@@ -43,7 +45,10 @@ export default function TreinadorDashboard({ navigation }) {
       return
     }
 
-    const coachId = user?.coachId || user?.treinador_id || user?.id
+    // For mock coach, use the coach record ID; otherwise use coachId/treinador_id/id
+    const coachId = USE_MOCKS && user.type === "coach" 
+      ? user.id 
+      : user?.coachId || user?.treinador_id || user?.id
 
     if (!coachId) {
       console.log("No coachId found in user:", user)
@@ -53,7 +58,11 @@ export default function TreinadorDashboard({ navigation }) {
 
     try {
       setLoading(true)
-      const athletesData = await athleteService.getAthletes(coachId)
+      
+      // Use mock data when USE_MOCKS is enabled
+      const athletesData = USE_MOCKS 
+        ? mockData.athletes 
+        : await athleteService.getAthletes(coachId)
 
       if (!athletesData || athletesData.length === 0) {
         console.log("No athletes found for coach", coachId)
@@ -68,16 +77,56 @@ export default function TreinadorDashboard({ navigation }) {
         return
       }
 
-      setAthletes(athletesData)
+      // fetch sessions per athlete to compute metrics coming from training plans
+      try {
+        const athletesWithMetrics = await Promise.all(
+          athletesData.map(async (a) => {
+            try {
+              const sessions = await trainingService.getSessions(a.id).catch(() => [])
 
+              // consider sessions in the next 7 days for weekly metrics
+              const now = new Date()
+              const weekAhead = new Date()
+              weekAhead.setDate(now.getDate() + 7)
+
+              const upcoming = sessions.filter((s) => {
+                if (!s.date) return false
+                const d = new Date(s.date)
+                return d >= now && d <= weekAhead
+              })
+
+              const treinos_semana = upcoming.length
+              // carga_treino: sum of durations (minutes) in upcoming week
+              const carga_treino = upcoming.reduce((acc, s) => acc + (s.duration || 0), 0)
+
+              return { ...a, treinos_semana, carga_treino }
+            } catch (err) {
+              console.warn(`Error fetching sessions for athlete ${a.id}:`, err)
+              return { ...a, treinos_semana: 0, carga_treino: 0 }
+            }
+          })
+        )
+
+        setAthletes(athletesWithMetrics)
+      } catch (err) {
+        console.warn("Could not compute athlete metrics:", err)
+        setAthletes(athletesData)
+      }
+      
       try {
         const athleteIds = athletesData.map((a) => a.id)
         let allFeedbacks = []
-        for (const id of athleteIds) {
-          const f = await feedbackService.getFeedbacksByAthlete(id).catch(() => [])
-          allFeedbacks = allFeedbacks.concat(f)
+        
+        if (USE_MOCKS) {
+          allFeedbacks = mockData.feedbacks.filter(f => athleteIds.includes(f.athlete_id))
+        } else {
+          for (const id of athleteIds) {
+            const f = await feedbackService.getFeedbacksByAthlete(id).catch(() => [])
+            allFeedbacks = allFeedbacks.concat(f)
+          }
         }
-        const sorted = allFeedbacks.sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 3)
+        
+        const sorted = allFeedbacks.sort((a, b) => new Date(b.data || b.created_at) - new Date(a.data || a.created_at)).slice(0, 3)
         setRecentFeedbacks(sorted)
       } catch (err) {
         console.warn("Could not load recent feedbacks:", err)
@@ -125,15 +174,21 @@ export default function TreinadorDashboard({ navigation }) {
   }
 
   const getAthleteDisplayName = (athlete) => {
+    // prefer nested user name coming from backend; fallback to legacy `nome` or `name`
     if (athlete.profile_image) {
       return athlete.profile_image
     }
-    return athlete.name
-      ? athlete.nome
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-      : "??"
+
+    const fullName = athlete.user?.first_name
+      ? `${athlete.user.first_name}${athlete.user.last_name ? ` ${athlete.user.last_name}` : ""}`
+      : athlete.nome || athlete.name || null
+
+    if (!fullName) return "??"
+
+    return fullName
+      .split(" ")
+      .map((n) => (n ? n[0] : ""))
+      .join("")
   }
 
   if (loading) {
@@ -204,7 +259,7 @@ export default function TreinadorDashboard({ navigation }) {
               <View style={styles.alertContent}>
                 <Text style={styles.alertTitle}>Atenção Necessária</Text>
                 <Text style={styles.alertMessage}>
-                  {alertAthlete.nome} (ESR {alertAthlete.ultimaESR}) - considere ajustar carga
+                  {(alertAthlete.user?.first_name || alertAthlete.nome)} (ESR {alertAthlete.ultimaESR}) - considere ajustar carga
                 </Text>
               </View>
             </View>
@@ -249,7 +304,7 @@ export default function TreinadorDashboard({ navigation }) {
                           </Text>
                         </View>
                         <View style={styles.feedbackMeta}>
-                          <Text style={styles.feedbackAthleteName}>{athlete?.nome || "Atleta"}</Text>
+                          <Text style={styles.feedbackAthleteName}>{athlete?.user?.first_name || athlete?.nome || athlete?.name || "Atleta"}</Text>
                           <Text style={styles.feedbackDate}>{new Date(feedback.data).toLocaleDateString("pt-BR")}</Text>
                         </View>
                       </View>
@@ -297,11 +352,11 @@ export default function TreinadorDashboard({ navigation }) {
                         <Text style={styles.athleteInitials}>{getAthleteDisplayName(athlete)}</Text>
                       </View>
                       <View style={styles.athleteInfo}>
-                        <Text style={styles.athleteName}>{athlete.nome || "Atleta"}</Text>
+                        <Text style={styles.athleteName}>{athlete.user?.first_name || athlete.nome || athlete.name || "Atleta"}</Text>
                         <View style={styles.athleteMetrics}>
-                          <Text style={styles.athleteMetric}>{calculateAge(athlete.data_nascimento)} anos</Text>
+                          <Text style={styles.athleteMetric}>{calculateAge(athlete.birth_date)} anos</Text>
                           <View style={styles.metricDot} />
-                          <Text style={styles.athleteMetric}>❤️ {athlete.frequencia_cardiaca_repouso} bpm</Text>
+                          <Text style={styles.athleteMetric}>❤️ {athlete.resting_heart_rate} bpm</Text>
                         </View>
                       </View>
                     </View>

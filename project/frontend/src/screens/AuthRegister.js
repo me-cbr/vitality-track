@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   TouchableOpacity,
+  Image,
 } from "react-native"
 import { colors, spacing, borderRadius } from "../theme/colors"
 import LoadingButton from "../components/LoadingButton"
@@ -150,7 +151,7 @@ export default function AuthRegister({ navigation }) {
 
         <View style={styles.content}>
           <View style={styles.logoContainer}>
-            <Text style={styles.logo}>💪</Text>
+            <Image source={require("../../assets/icon.png")} style={styles.logoImage} />
             <Text style={styles.appName}>VitalityCheck</Text>
           </View>
 
@@ -378,14 +379,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: spacing.xxl,
   },
-  logo: {
-    fontSize: 64,
+  logoImage: {
+    width: 90,
+    height: 90,
     marginBottom: spacing.sm,
+    borderRadius: 12,
   },
   appName: {
     fontSize: 24,
     fontWeight: "700",
-    color: colors.primary,
+    color: colors.gray,
     letterSpacing: -0.5,
   },
   title: {
