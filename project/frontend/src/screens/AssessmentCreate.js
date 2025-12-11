@@ -49,32 +49,6 @@ export default function AssessmentCreate({ navigation, route }) {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Zonas de Treinamento Calculadas</Text>
-          <View style={styles.zonesList}>
-            <View style={[styles.zoneItem, { backgroundColor: colors.zone1 }]}>
-              <Text style={styles.zoneName}>Zona 1 - Recuperação</Text>
-              <Text style={styles.zoneRange}>114-133 bpm</Text>
-            </View>
-            <View style={[styles.zoneItem, { backgroundColor: colors.zone2 }]}>
-              <Text style={styles.zoneName}>Zona 2 - Aeróbica</Text>
-              <Text style={styles.zoneRange}>133-152 bpm</Text>
-            </View>
-            <View style={[styles.zoneItem, { backgroundColor: colors.zone3 }]}>
-              <Text style={styles.zoneName}>Zona 3 - Tempo</Text>
-              <Text style={styles.zoneRange}>152-171 bpm</Text>
-            </View>
-            <View style={[styles.zoneItem, { backgroundColor: colors.zone4 }]}>
-              <Text style={styles.zoneName}>Zona 4 - Anaeróbica</Text>
-              <Text style={styles.zoneRange}>171-190 bpm</Text>
-            </View>
-            <View style={[styles.zoneItem, { backgroundColor: colors.zone5 }]}>
-              <Text style={styles.zoneName}>Zona 5 - Máxima</Text>
-              <Text style={styles.zoneRange}>190+ bpm</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.card}>
           <Text style={styles.label}>Observações</Text>
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -180,23 +154,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
-  },
-  zonesList: {
-    gap: 8,
-  },
-  zoneItem: {
-    padding: 16,
-    borderRadius: 12,
-  },
-  zoneName: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: colors.surface,
-    marginBottom: 4,
-  },
-  zoneRange: {
-    fontSize: 13,
-    color: colors.surface,
-    opacity: 0.9,
   },
 })

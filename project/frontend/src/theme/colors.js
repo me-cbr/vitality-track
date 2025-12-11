@@ -46,9 +46,9 @@ export const colors = {
   gray: "#6B7280",
 
   // Heart rate zones - soft gradient
-  zone1: "#A8E6CF",
-  zone2: "#C8F2A8",
-  zone3: "#FFE5A0",
+  zone1: "#9ae4c9ff",
+  zone2: "#b3ec87ff",
+  zone3: "#fadb88ff",
   zone4: "#FFB4A2",
   zone5: "#FFB4B4",
 }
